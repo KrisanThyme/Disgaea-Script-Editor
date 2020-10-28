@@ -18,7 +18,7 @@ namespace DisgaeaScriptEditor.Formats
 
         static byte flagcount;
         static byte flag1type;
-        static byte opcode = 0;
+        static byte opcode;
         static byte opcodelen;
         static byte argCount;
 
@@ -33,10 +33,10 @@ namespace DisgaeaScriptEditor.Formats
         static string ops2;
         static string ops3;
         static string operand;
-
+        
         static string parseTime(params byte[] args) => Decimal.Divide(BitConverter.ToInt16(args, 0), 60).ToString("F");
-        static string parseDecimal(params byte[] args) => BitConverter.ToInt16(args, 0).ToString("F");
         static string parseInt16(params byte[] args) => Convert.ToString(BitConverter.ToInt16(args, 0));
+        static string parseUInt16(params byte[] args) => Convert.ToString(BitConverter.ToUInt16(args, 0));
         static string parseInt32(params byte[] args) => Convert.ToString(BitConverter.ToInt32(args, 0));
         static string parseUnknown(params byte[] args) => BitConverter.ToString(args);
 
@@ -130,17 +130,54 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x12:
                             // Call Script
-                            arg1 = parseInt32(scrdat.Skip(scrptr + 2).Take(4).ToArray());
+                            arg1 = Convert.ToString(scrdat[scrptr + 2] | (scrdat[scrptr + 3] << 8) | (scrdat[scrptr + 4] << 16));
                             scrptr = nexptr;
                             sw.WriteLine(prefix + "script(" + arg1 + ")");
                             break;
 
+                        case 0x15:
+                            // Load Map
+                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "load.Map(" + arg1 + ")");
+                            break;
+
                         case 0x29:
                             // Camera Zoom
-                            arg1 = parseDecimal(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = parseTime(scrdat.Skip(scrptr + 4).Take(2).ToArray());
+                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "camera.Zoom(" + arg1 + ", " + arg2 + "s)");
+                            sw.WriteLine(prefix + "camera.Zoom(" + arg1 + "s, " + arg2 + ")");
+                            break;
+
+                        case 0x2B:
+                            // Camera Pitch
+                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "camera.Pitch(" + arg1 + "s, " + arg2 + ")");
+                            break;
+
+                        case 0x50:
+                            // Give HL
+                            arg1 = parseInt32(scrdat.Skip(scrptr + 2).Take(4).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "get.HL(" + arg1 + ")");
+                            break;
+
+                        case 0x51:
+                            // Give Item
+                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "get.Item(" + arg1 + ", " + arg2 + ")");
+                            break;
+
+                        case 0x53:
+                            // Input Control
+                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "control.Input(" + arg1 + ")");
                             break;
 
                         case 0xD0:
@@ -168,35 +205,35 @@ namespace DisgaeaScriptEditor.Formats
                 flag1type = scrdat[scrptr + 4];
                 if (flag1type != 0)
                 {
-                    arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                    arg1 = parseUInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
                     operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray());
                     arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
                     scrptr = scrptr + 4 + 7;
-                    sw.WriteLine(prefix + "if (flag(" + arg1 + ")" + Operator() + arg2 + ") then");
+                    sw.WriteLine(prefix + "if (flag[" + arg1 + "]" + Operator() + arg2 + ") then");
                 }
                 else
                 {
                     arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
                     operand = scrdat[scrptr + 7].ToString();
                     unk = scrdat[scrptr + 8].ToString();
-                    arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
+                    arg2 = parseUInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
                     scrptr = scrptr + 4 + 7;
-                    sw.WriteLine(prefix + "if (" + arg1 + Operator() + "flag(" + arg2 + ")) then");
+                    sw.WriteLine(prefix + "if (" + arg1 + Operator() + "flag[" + arg2 + "]) then");
                 }
             }
             else
             {
                 type1 = scrdat[scrptr + 4].ToString();
-                arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                arg1 = parseUInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
                 operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray()); ops1 = Operator();
                 arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
                 operand = scrdat[scrptr + 11].ToString(); ops2 = Operator();
                 type2 = scrdat[scrptr + 12].ToString();
-                arg3 = parseInt16(scrdat.Skip(scrptr + 13).Take(2).ToArray());
+                arg3 = parseUInt16(scrdat.Skip(scrptr + 13).Take(2).ToArray());
                 operand = parseInt16(scrdat.Skip(scrptr + 15).Take(2).ToArray()); ops3 = Operator();
                 arg4 = parseInt16(scrdat.Skip(scrptr + 17).Take(2).ToArray());
                 scrptr = scrptr + 4 + 15;
-                sw.WriteLine(prefix + "if (flag(" + arg1 + ")" + ops1 + arg2 + ops2 + "flag(" + arg3 + ")" + ops3 + arg4 + ") then");
+                sw.WriteLine(prefix + "if (flag[" + arg1 + "]" + ops1 + arg2 + ops2 + "flag[" + arg3 + "]" + ops3 + arg4 + ") then");
             }
         }
 
@@ -205,23 +242,23 @@ namespace DisgaeaScriptEditor.Formats
             switch (operand) 
             {
                 case "1":
-                    // Equal Operator: =
+                    // Assignment Operator
                     return " = ";
 
                 case "10":
-                    // Equality Operator: ==
+                    // Equality Operator
                     return " == ";
 
 				case "20":
-                    // Conditional Logical OR Operator: ||
+                    // Conditional Logical OR Operator
                     return " || ";
 
                 case "21":
-                    // Conditional Logical AND Operator: &&
+                    // Conditional Logical AND Operator
                     return " && ";
 
                 default:
-                    // Unknown Operator: ??
+                    // Unknown Operator
 					return " ?? ";
             }
         }

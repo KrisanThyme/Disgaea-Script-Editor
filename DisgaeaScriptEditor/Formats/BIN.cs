@@ -17,33 +17,28 @@ namespace DisgaeaScriptEditor.Formats
         static string prefix;
 
         static byte flagcount;
-        static byte flagsop;
         static byte flag1type;
-        static byte flag2type;
-        static byte flagunk;
-        static byte[] flag1 = new byte[4];
-        static byte[] flag1val = new byte[2];
-        static byte[] flag1op = new byte[2];
-        static byte[] flag2 = new byte[4];
-        static byte[] flag2val = new byte[2];
-        static byte[] flag2op = new byte[2];
-        static string flag1str;
-        static string flag2str;
-        static string flagstr;
-
-        static string op;
         static byte opcode = 0;
         static byte opcodelen;
-
         static byte argCount;
-        static byte argByte;
-        static byte[] argInt16 = new byte[2];
-        static byte[] argInt32 = new byte[4];
-        static byte[] argUnk;
-        static decimal arg1Dec;
-        static decimal arg2Dec;
+
+        static string unk;
         static string arg1;
         static string arg2;
+        static string arg3;
+        static string arg4;
+        static string type1;
+        static string type2;
+        static string ops1;
+        static string ops2;
+        static string ops3;
+        static string operand;
+
+        static string parseTime(params byte[] args) => Decimal.Divide(BitConverter.ToInt16(args, 0), 60).ToString("F");
+        static string parseDecimal(params byte[] args) => BitConverter.ToInt16(args, 0).ToString("F");
+        static string parseInt16(params byte[] args) => Convert.ToString(BitConverter.ToInt16(args, 0));
+        static string parseInt32(params byte[] args) => Convert.ToString(BitConverter.ToInt32(args, 0));
+        static string parseUnknown(params byte[] args) => BitConverter.ToString(args);
 
         static FileStream fs;
         static StreamWriter sw;
@@ -79,10 +74,9 @@ namespace DisgaeaScriptEditor.Formats
                     {
                         case 0x01:
                             // Sleep
-                            Array.Copy(scrdat, scrptr + 2, argInt16, 0, 2);
-                            arg1Dec = Decimal.Divide(BitConverter.ToInt16(argInt16, 0), 60);
+                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "sleep(" + arg1Dec.ToString("F") + "s)");
+                            sw.WriteLine(prefix + "sleep(" + arg1 + "s)");
                             break;
 
                         case 0x02:
@@ -106,58 +100,61 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x07:
                             // If Statement
                             flagcount = scrdat[scrptr + 3];
-                            IfStatement();
-                            indent = "\t\t";
+                            IfStatement(); indent = "\t\t";
+                            break;
+
+                        case 0x08:
+                            // Set Operation
+                            unk = scrdat[scrptr + 2].ToString();
+                            arg1 = parseInt16(scrdat.Skip(scrptr + 3).Take(2).ToArray());
+                            operand = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                            arg2 = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray());
+                            scrptr = nexptr;
+                            sw.WriteLine(prefix + "setflag(" + arg1 + Operator() + arg2 + ")");
                             break;
 
                         case 0x09:
                             // EndIf Statement
                             scrptr = nexptr;
-                            indent = "\t";
-                            prefix = opcode.ToString("X2") + ":" + indent;
+                            indent = "\t"; prefix = opcode.ToString("X2") + ":" + indent;
                             sw.WriteLine(prefix + "endif");
                             break;
 
                         case 0x0A:
                             // Fade Screen
-                            argByte = scrdat[scrptr + 2];
-                            Array.Copy(scrdat, scrptr + 3, argInt16, 0, 2);
-                            arg1Dec = Decimal.Divide(BitConverter.ToInt16(argInt16, 0), 60);
+                            arg1 = scrdat[scrptr + 2].ToString();
+                            arg2 = parseTime(scrdat.Skip(scrptr + 3).Take(2).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "fadeout(" + argByte + ", " + arg1Dec.ToString("F") + "s)");
+                            sw.WriteLine(prefix + "fadeout(" + arg1 + ", " + arg2 + "s)");
                             break;
 
                         case 0x12:
                             // Call Script
-                            Array.Copy(scrdat, scrptr + 2, argInt32, 0, opcodelen);
+                            arg1 = parseInt32(scrdat.Skip(scrptr + 2).Take(4).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "script(" + BitConverter.ToInt32(argInt32, 0) + ")");
+                            sw.WriteLine(prefix + "script(" + arg1 + ")");
                             break;
 
                         case 0x29:
                             // Camera Zoom
-                            Array.Copy(scrdat, scrptr + 2, argInt16, 0, 2);
-                            arg1Dec = Decimal.Divide(BitConverter.ToInt16(argInt16, 0), 60);
-                            Array.Copy(scrdat, scrptr + 4, argInt16, 0, 2);
-                            arg2Dec = Decimal.Divide(BitConverter.ToInt16(argInt16, 0), 60);
+                            arg1 = parseDecimal(scrdat.Skip(scrptr + 2).Take(2).ToArray());
+                            arg2 = parseTime(scrdat.Skip(scrptr + 4).Take(2).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "camera.Zoom(" + arg1Dec.ToString("F") + ", " + arg2Dec.ToString("F") + "s)");
+                            sw.WriteLine(prefix + "camera.Zoom(" + arg1 + ", " + arg2 + "s)");
                             break;
 
                         case 0xD0:
                             // Unknown Opcode 0xD0
-                            argUnk = new byte[4];
-                            Array.Copy(scrdat, scrptr + 2, argUnk, 0, 4);
+                            arg1 = parseUnknown(scrdat.Skip(scrptr + 2).Take(4).ToArray());
                             scrptr = scrptr + 4 + 1;
-                            sw.WriteLine(prefix + "unknown_opcode" + " - args[" + 4 + "]: " + BitConverter.ToString(argUnk));
+                            sw.WriteLine(prefix + "unknown_opcode" + " - args[" + 4 + "]: " + arg1);
                             break;
 
                         default:
                             // Unknown Opcode
-                            argUnk = new byte[opcodelen];
-                            Array.Copy(scrdat, scrptr + 2, argUnk, 0, opcodelen);
+                            arg1 = parseUnknown(scrdat.Skip(scrptr + 2).Take(opcodelen).ToArray());
                             scrptr = nexptr;
-                            sw.WriteLine(prefix + "unknown_opcode" + " - args[" + argCount + "]: " + BitConverter.ToString(argUnk));
+                            sw.WriteLine(prefix + "unknown_opcode" + " - args[" + argCount + "]: " + arg1);
                             break;
                     }
                 }
@@ -171,53 +168,47 @@ namespace DisgaeaScriptEditor.Formats
                 flag1type = scrdat[scrptr + 4];
                 if (flag1type != 0)
                 {
-                    Array.Copy(scrdat, scrptr + 5, flag1, 0, 2);
-                    Array.Copy(scrdat, scrptr + 7, flag1op, 0, 2);
-                    Array.Copy(scrdat, scrptr + 9, flag1val, 0, 2);
-                    op = Convert.ToString(BitConverter.ToInt16(flag1op, 0));
-                    flag1str = Operator();
+                    arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                    operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray());
+                    arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
                     scrptr = scrptr + 4 + 7;
-                    sw.WriteLine(prefix + "if (Flag #" + BitConverter.ToInt32(flag1, 0) + flag1str + BitConverter.ToInt16(flag1val, 0) + ") then");
+                    sw.WriteLine(prefix + "if (flag(" + arg1 + ")" + Operator() + arg2 + ") then");
                 }
                 else
                 {
-                    Array.Copy(scrdat, scrptr + 5, flag1val, 0, 2);
-                    Array.Copy(scrdat, scrptr + 7, flag1op, 0, 1);
-                    Array.Copy(scrdat, scrptr + 9, flag1, 0, 2);
-                    flagunk = scrdat[scrptr + 8];
-                    op = Convert.ToString(BitConverter.ToInt16(flag1op, 0));
-                    flag1str = Operator();
+                    arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                    operand = scrdat[scrptr + 7].ToString();
+                    unk = scrdat[scrptr + 8].ToString();
+                    arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
                     scrptr = scrptr + 4 + 7;
-                    sw.WriteLine(prefix + "if (" + BitConverter.ToInt16(flag1val, 0) + flag1str + "Flag #" + BitConverter.ToInt32(flag1, 0) + ") then");
+                    sw.WriteLine(prefix + "if (" + arg1 + Operator() + "flag(" + arg2 + ")) then");
                 }
             }
             else
             {
-                flag1type = scrdat[scrptr + 4];
-                Array.Copy(scrdat, scrptr + 5, flag1, 0, 2);
-                Array.Copy(scrdat, scrptr + 7, flag1op, 0, 2);
-                Array.Copy(scrdat, scrptr + 9, flag1val, 0, 2);
-                flagsop = scrdat[scrptr + 11];
-                flag2type = scrdat[scrptr + 12];
-                Array.Copy(scrdat, scrptr + 13, flag2, 0, 2);
-                Array.Copy(scrdat, scrptr + 15, flag2op, 0, 2);
-                Array.Copy(scrdat, scrptr + 17, flag2val, 0, 2);
-                op = Convert.ToString(BitConverter.ToInt16(flag1op, 0));
-                flag1str = Operator();
-                op = Convert.ToString(BitConverter.ToInt16(flag2op, 0));
-                flag2str = Operator();
-                op = Convert.ToString(flagsop);
-                flagstr = Operator();
+                type1 = scrdat[scrptr + 4].ToString();
+                arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
+                operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray()); ops1 = Operator();
+                arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
+                operand = scrdat[scrptr + 11].ToString(); ops2 = Operator();
+                type2 = scrdat[scrptr + 12].ToString();
+                arg3 = parseInt16(scrdat.Skip(scrptr + 13).Take(2).ToArray());
+                operand = parseInt16(scrdat.Skip(scrptr + 15).Take(2).ToArray()); ops3 = Operator();
+                arg4 = parseInt16(scrdat.Skip(scrptr + 17).Take(2).ToArray());
                 scrptr = scrptr + 4 + 15;
-                sw.WriteLine(prefix + "if (Flag #" + BitConverter.ToInt32(flag1, 0) + flag1str + BitConverter.ToInt16(flag1val, 0) + flagstr + "Flag #" + BitConverter.ToInt32(flag2, 0) + flag2str + BitConverter.ToInt16(flag2val, 0) + ") then");
+                sw.WriteLine(prefix + "if (flag(" + arg1 + ")" + ops1 + arg2 + ops2 + "flag(" + arg3 + ")" + ops3 + arg4 + ") then");
             }
         }
 
         public static string Operator()
         {
-            switch (op) 
+            switch (operand) 
             {
-				case "10":
+                case "1":
+                    // Equal Operator: =
+                    return " = ";
+
+                case "10":
                     // Equality Operator: ==
                     return " == ";
 

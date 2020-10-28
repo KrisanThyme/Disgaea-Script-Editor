@@ -12,7 +12,8 @@ namespace DisgaeaScriptEditor
     public partial class MainWindow : Window 
     {
         public static string UserFile;
-        public static string UserFolder; 
+        public static string UserFolder;
+        public static string Extension;
         public static byte[] WorkingFile;
 
         static VistaOpenFileDialog ofd = new VistaOpenFileDialog();
@@ -33,6 +34,7 @@ namespace DisgaeaScriptEditor
             {
                 Formats.DAT.Unpack();
                 System.Windows.Forms.MessageBox.Show("Unpacking Complete.", "Script Unpacker");
+                ofd.FileName = null;
             }
             else
             {
@@ -49,6 +51,7 @@ namespace DisgaeaScriptEditor
             {
                 Formats.DAT.Pack();
                 System.Windows.Forms.MessageBox.Show("Packing Complete.", "Script Packer");
+                fbd.SelectedPath = null;
             }
             else
             {
@@ -61,12 +64,23 @@ namespace DisgaeaScriptEditor
             ofd.Filter = "BIN File(*.bin)|*.bin";
             ofd.ShowDialog();
             UserFile = ofd.FileName;
+            Extension = Path.GetExtension(UserFile);
 
             if (!string.IsNullOrEmpty(UserFile))
             {
-                WorkingFile = File.ReadAllBytes(UserFile);
-                Formats.BIN.Parse();
-                System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+                if (Extension == ".BIN" || Extension == ".bin")
+                {
+                    WorkingFile = File.ReadAllBytes(UserFile);
+                    Formats.BIN.Parse();
+                    System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+                    ofd.FileName = null;
+                }
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("The selected file was not a valid Disgaea Script.", "Script Parser");
+                    ofd.FileName = null;
+                    return;
+                }
             }
             else
             {
@@ -81,13 +95,23 @@ namespace DisgaeaScriptEditor
 
             if (!string.IsNullOrEmpty(UserFolder))
             {
-                foreach (string scrfile in Directory.EnumerateFiles(UserFolder, "*.bin"))
+                if (Directory.GetFiles(UserFolder, "*.bin").Length != 0)
                 {
-                    UserFile = scrfile;
-                    WorkingFile = File.ReadAllBytes(UserFile);
-                    Formats.BIN.Parse();
+                    foreach (string scrfile in Directory.EnumerateFiles(UserFolder, "*.bin"))
+                    {
+                        UserFile = scrfile;
+                        WorkingFile = File.ReadAllBytes(UserFile);
+                        Formats.BIN.Parse();
+                    }
+                    System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+                    fbd.SelectedPath = null;
                 }
-                System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("No valid files for parsing were found.", "Script Parser");
+                    fbd.SelectedPath = null;
+                    return;
+                }
             }
             else
             {

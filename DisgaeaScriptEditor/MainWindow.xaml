@@ -1,0 +1,28 @@
+﻿<Window x:Class="DisgaeaScriptEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DisgaeaScriptEditor"
+        mc:Ignorable="d"
+        Title="Disgaea Script Editor" Height="200" Width="370"
+        Icon="Icon.ico">
+    <Grid>
+        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="66" Margin="10,10,0,0" VerticalAlignment="Top" Width="110"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Script Archive" VerticalAlignment="Top" Width="110" TextAlignment="Center"/>
+        <Button x:Name="UnpackButton" Content="Extract SCRIPT.DAT" HorizontalAlignment="Left" Margin="10,31,0,0" VerticalAlignment="Top" Width="110" Click="UnpackButton_Click"/>
+        <Button x:Name="PackButton" Content="Pack SCRIPT.DAT" HorizontalAlignment="Left" Margin="10,56,0,0" VerticalAlignment="Top" Width="110" Click="PackButton_Click"/>
+
+        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="66" Margin="125,10,0,0" VerticalAlignment="Top" Width="110"/>
+        <TextBlock HorizontalAlignment="Left" Margin="125,10,0,0" TextWrapping="Wrap" Text="Script Parser" VerticalAlignment="Top" Width="110" TextAlignment="Center"/>
+        <Button x:Name="ParseButton" Content="Parse Script File" HorizontalAlignment="Left" Margin="125,31,0,0" VerticalAlignment="Top" Width="110" Click="ParseButton_Click"/>
+        <Button x:Name="ParseAllButton" Content="Parse All Scripts" HorizontalAlignment="Left" Margin="125,56,0,0" VerticalAlignment="Top" Width="110" Click="ParseAllButton_Click"/>
+
+        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="66" Margin="240,10,0,0" VerticalAlignment="Top" Width="110"/>
+        <TextBlock HorizontalAlignment="Left" Margin="240,10,0,0" TextWrapping="Wrap" Text="Script Compiler" VerticalAlignment="Top" Width="110" TextAlignment="Center"/>
+        <Button x:Name="CompileButton" Content="Compile Script File" HorizontalAlignment="Left" Margin="240,31,0,0" VerticalAlignment="Top" Width="110" IsEnabled="False"/>
+        <Button x:Name="CompileAllButton" Content="Compile All Scripts" HorizontalAlignment="Left" Margin="240,56,0,0" VerticalAlignment="Top" Width="110" IsEnabled="False"/>
+        <Image HorizontalAlignment="Left" Height="78" Margin="80,80,0,0" VerticalAlignment="Top" Width="200" Source="disgaealogo.png"/>
+
+    </Grid>
+</Window>

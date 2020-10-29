@@ -7,41 +7,39 @@ namespace DisgaeaScriptEditor.Formats
 {
     class DAT
     {
-        static byte[] scrdat;
-        static int scrlen;
-        static int count;
-        static int size;
-        static int tablesize;
-        static int datsize;
-        static int pointerval;
-        static int pointoff;
-        static int idoff;
-        static int dataoff;
-        static int filesize;
-        static int datlen;
-        static int scrid;
-        static int scroff;
-        static int scrnex;
-
-        static byte[] pointarray;
-        static byte[] idarray;
-        static byte[] datarray;
-        static byte[] packarray;
-        static byte[] header = new byte[4];
-        static byte[] pointer = new byte[4];
-        static byte[] curoff = new byte[4];
-        static byte[] nextoff = new byte[4];
-        static byte[] curid = new byte[4];
-        static byte[] curfile = new byte[0];
-
-        static List<byte[]> idarraylist = new List<byte[]>();
-        static List<byte[]> pointarraylist = new List<byte[]>();
-        static List<byte[]> datarraylist = new List<byte[]>();
-        static List<byte[]> packarraylist = new List<byte[]>();
-
         static string filename;
         static string exdir;
         static string packdir;
+
+        static byte[] filedata;
+        static int filedataLength;
+        static int fileCount;
+        static int fileSize;
+        static int tableSize;
+        static int pointerValue;
+        static int pointerOffset;
+        static int scriptOffset;
+        static int dataOffset;
+        static int dataSize;
+        static int script;
+        static int offset;
+        static int nextOffset;
+
+        static byte[] header = new byte[4];
+        static byte[] pointer = new byte[4];
+        static byte[] scriptID = new byte[4];
+        static byte[] workingFile;
+        static byte[] pointerArray;
+        static byte[] scriptArray;
+        static byte[] dataArray;
+        static byte[] packedArray;
+
+        static List<byte[]> pointerList = new List<byte[]>();
+        static List<byte[]> scriptList = new List<byte[]>();
+        static List<byte[]> dataList = new List<byte[]>();
+        static List<byte[]> packedList = new List<byte[]>();
+
+        static int storeInt32(params byte[] args) => BitConverter.ToInt32(args, 0);
 
         static BinaryReader br;
 
@@ -49,66 +47,60 @@ namespace DisgaeaScriptEditor.Formats
         {
             using (br = new BinaryReader(File.OpenRead(MainWindow.UserFile)))
             {
-                scrdat = File.ReadAllBytes(MainWindow.UserFile);
-                scrlen = scrdat.Length;
-                count = BitConverter.ToInt32(scrdat.Skip(0).Take(4).ToArray(), 0);
-                tablesize = 4 * count;
-                datsize = scrlen - (tablesize * 2) - 4;
-                pointoff = 4;
-                idoff = 4 * (count + 1);
-                dataoff = 4 * (count * 2 + 1);
-                pointarray = new byte[tablesize];
-                idarray = new byte[tablesize];
-                datarray = new byte[datsize];
+                filedata = File.ReadAllBytes(MainWindow.UserFile);
+                filedataLength = filedata.Length;
+                fileCount = BitConverter.ToInt32(filedata.Skip(0).Take(4).ToArray(), 0);
+                tableSize = 4 * fileCount;
+                dataSize = filedataLength - (tableSize * 2) - 4;
+                pointerOffset = 4;
+                scriptOffset = 4 * (fileCount + 1);
+                dataOffset = 4 * (fileCount * 2 + 1);
+                pointerArray = new byte[tableSize];
+                scriptArray = new byte[tableSize];
+                dataArray = new byte[dataSize];
 
-                Array.Copy(scrdat, pointoff, pointarray, 0, tablesize); 
-                Array.Copy(scrdat, idoff, idarray, 0, tablesize);
-                Array.Copy(scrdat, dataoff, datarray, 0, datsize);
+                Array.Copy(filedata, pointerOffset, pointerArray, 0, tableSize); 
+                Array.Copy(filedata, scriptOffset, scriptArray, 0, tableSize);
+                Array.Copy(filedata, dataOffset, dataArray, 0, dataSize);
 
                 exdir = System.IO.Path.GetDirectoryName(MainWindow.UserFile) + "/Extracted/";
                 Directory.CreateDirectory(exdir);
 
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < fileCount; i++)
                 {
-                    Array.Copy(scrdat, pointoff + (4 * i), curoff, 0, 4);
-                    Array.Copy(scrdat, idoff + (4 * i), curid, 0, 4);
+                    offset = storeInt32(filedata.Skip(pointerOffset + (4 * i)).Take(4).ToArray());
+                    script = storeInt32(filedata.Skip(scriptOffset + (4 * i)).Take(4).ToArray());
+                    filename = Convert.ToString(script).PadLeft(8, '0');
 
-                    datlen = datarray.Length;
-                    scroff = BitConverter.ToInt32(curoff, 0);
-                    scrid = BitConverter.ToInt32(curid, 0);
-                    filename = Convert.ToString(scrid).PadLeft(8, '0');
-
-                    if (i != (count - 1))
+                    if (i != (fileCount - 1))
                     {
-                        Array.Copy(pointarray, pointoff + (4 * i), nextoff, 0, 4);
+                        nextOffset = storeInt32(pointerArray.Skip(pointerOffset + (4 * i)).Take(4).ToArray());
+                        fileSize = nextOffset - offset;
 
-                        scrnex = BitConverter.ToInt32(nextoff, 0);
-                        filesize = scrnex - scroff;
-                        curfile = new byte[filesize];
-
-                        Array.Copy(datarray, scroff, curfile, 0, filesize);
+                        workingFile = new byte[fileSize];
+                        Array.Copy(dataArray, offset, workingFile, 0, fileSize);
 
                         var bw = new BinaryWriter(File.Create(exdir + filename + ".BIN"));
-                        bw.Write(curfile);
+                        bw.Write(workingFile);
                         bw.Close();
                     }
                     else
                     {
-                        filesize = datlen - scroff;
+                        fileSize = dataSize - offset;
 
-                        if (filesize == 786)
+                        if (fileSize == 786)
                         {
-                            if (BitConverter.ToInt32(datarray.Skip(scroff + 773).Take(13).ToArray(), 0) == 0)
+                            if (BitConverter.ToInt32(dataArray.Skip(offset + 773).Take(13).ToArray(), 0) == 0)
                             {
-                                filesize = 773;
+                                fileSize = 773;
                             }
                         }
 
-                        curfile = new byte[filesize];
-                        Array.Copy(datarray, scroff, curfile, 0, filesize);
+                        workingFile = new byte[fileSize];
+                        Array.Copy(dataArray, offset, workingFile, 0, fileSize);
 
                         var bw = new BinaryWriter(File.Create(exdir + filename + ".BIN"));
-                        bw.Write(curfile);
+                        bw.Write(workingFile);
                         bw.Close();
                     }
                 }
@@ -118,48 +110,47 @@ namespace DisgaeaScriptEditor.Formats
 
         public static void Pack()
         {
-            size = 0;
-            count = Directory.EnumerateFiles(MainWindow.UserFolder, "*.bin").Count();
-            header = BitConverter.GetBytes(count);
-            pointer = BitConverter.GetBytes(size);
-            pointarraylist.Add(pointer);
+            fileCount = Directory.EnumerateFiles(MainWindow.UserFolder, "*.bin").Count();
+            header = BitConverter.GetBytes(fileCount);
+            pointer = BitConverter.GetBytes(0);
+            pointerList.Add(pointer);
 
             foreach (string scrfile in Directory.EnumerateFiles(MainWindow.UserFolder, "*.bin"))
             {
                 filename = System.IO.Path.GetFileNameWithoutExtension(scrfile);
-                scrid = Int32.Parse(filename);
-                curid = BitConverter.GetBytes(scrid);
-                idarraylist.Add(curid);
+                script = Int32.Parse(filename);
+                scriptID = BitConverter.GetBytes(script);
+                scriptList.Add(scriptID);
 
                 using (br = new BinaryReader(File.OpenRead(scrfile)))
                 {
-                    scrdat = File.ReadAllBytes(scrfile);
-                    datlen = scrdat.Length;
-                    pointerval = size + datlen;
-                    pointer = BitConverter.GetBytes(pointerval);
-                    size = pointerval;
-                    pointarraylist.Add(pointer);
-                    datarraylist.Add(scrdat);
+                    filedata = File.ReadAllBytes(scrfile);
+                    filedataLength = filedata.Length;
+                    pointerValue = dataSize + filedataLength;
+                    pointer = BitConverter.GetBytes(pointerValue);
+                    dataSize = pointerValue;
+                    pointerList.Add(pointer);
+                    dataList.Add(filedata);
 
                     br.Close();
                 }
             }
 
-            pointarraylist.Remove(pointer);
-            pointarray = pointarraylist.SelectMany(a => a).ToArray();
-            idarray = idarraylist.SelectMany(a => a).ToArray();
-            datarray = datarraylist.SelectMany(a => a).ToArray();
-            packarraylist.Add(header);
-            packarraylist.Add(pointarray);
-            packarraylist.Add(idarray);
-            packarraylist.Add(datarray);
-            packarray = packarraylist.SelectMany(a => a).ToArray();
+            pointerList.Remove(pointer);
+            pointerArray = pointerList.SelectMany(a => a).ToArray();
+            scriptArray = scriptList.SelectMany(a => a).ToArray();
+            dataArray = dataList.SelectMany(a => a).ToArray();
+            packedList.Add(header);
+            packedList.Add(pointerArray);
+            packedList.Add(scriptArray);
+            packedList.Add(dataArray);
+            packedArray = packedList.SelectMany(a => a).ToArray();
 
             packdir = MainWindow.UserFolder + "/Packed/";
             Directory.CreateDirectory(packdir);
 
             var bw = new BinaryWriter(File.Create(packdir + "SCRIPT.DAT"));
-            bw.Write(packarray);
+            bw.Write(packedArray);
             bw.Close();
         }
     }

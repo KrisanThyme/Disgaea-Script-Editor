@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
@@ -8,13 +7,13 @@ namespace DisgaeaScriptEditor.Formats
 {
     class BIN
     {
-        static byte[] scrdat;
-        static int scrlen;
-        static int scrptr;
-
         static string filename;
         static string pardir;
         static string indent;
+
+        static byte[] fileData;
+        static int fileDataLength;
+        static int pointer;
 
         static byte count;
         static byte type;
@@ -37,7 +36,7 @@ namespace DisgaeaScriptEditor.Formats
         static string parseInt16(params byte[] args) => Convert.ToString(BitConverter.ToInt16(args, 0));
         static string parseUInt16(params byte[] args) => Convert.ToString(BitConverter.ToUInt16(args, 0));
         static string parseInt32(params byte[] args) => Convert.ToString(BitConverter.ToInt32(args, 0));
-        static string parseString(params byte[] args) => Encoding.GetEncoding("shift_jis").GetString(scrdat.Skip(scrptr + 2).Take(opcodeLen - 1).ToArray());
+        static string parseString(params byte[] args) => Encoding.GetEncoding("shift_jis").GetString(fileData.Skip(pointer + 2).Take(opcodeLen - 1).ToArray());
         static string parseTime(params byte[] args) => Decimal.Divide(BitConverter.ToInt16(args, 0), 60).ToString("F");
         static string parseUnknown(params byte[] args) => BitConverter.ToString(args);
 
@@ -46,9 +45,9 @@ namespace DisgaeaScriptEditor.Formats
 
         public static void Parse()
         {
-            scrdat = MainWindow.WorkingFile;
-            scrlen = scrdat.Length;
-            scrptr = 0;
+            fileData = MainWindow.WorkingFile;
+            fileDataLength = fileData.Length;
+            pointer = 0;
             indent = "\t";
 
             filename = System.IO.Path.GetFileNameWithoutExtension(MainWindow.UserFile);
@@ -62,27 +61,27 @@ namespace DisgaeaScriptEditor.Formats
             {
                 sw.WriteLine("script(" + filename + ")\n{");
 
-                while (scrptr < scrlen)
+                while (pointer < fileDataLength)
                 {
-                    opcode = scrdat[scrptr];
-                    opcodeLen = scrdat[scrptr + 1];
+                    opcode = fileData[pointer];
+                    opcodeLen = fileData[pointer + 1];
                     argCount = opcodeLen;
 
-                    int nexptr = scrptr + 2 + opcodeLen;
+                    int nexptr = pointer + 2 + opcodeLen;
 
                     switch (opcode)
                     {
                         case 0x01:
                             // Sleep
-                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "sleep(time[" + arg1 + "]);");
                             break;
 
                         case 0x02:
                             // End Script
-                            scrptr = nexptr;
-                            if (scrptr != scrlen)
+                            pointer = nexptr;
+                            if (pointer != fileDataLength)
                             {
                                 sw.WriteLine(indent + "return;");
                             }
@@ -94,157 +93,194 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x05:
                             // Lock Controls
-                            scrptr = nexptr;
+                            pointer = nexptr;
                             sw.WriteLine(indent + "control.lock();");
                             break;
 
                         case 0x06:
                             // Unlock Controls
-                            scrptr = nexptr;
+                            pointer = nexptr;
                             sw.WriteLine(indent + "control.unlock();");
                             break;
 
                         case 0x07:
                             // If Statement
-                            count = scrdat[scrptr + 3];
+                            count = fileData[pointer + 3];
                             IfStatement(); indent = "\t\t";
                             break;
 
                         case 0x08:
                             // Set Operation
-                            unk = scrdat[scrptr + 2].ToString();
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 3).Take(2).ToArray());
-                            operand = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
-                            arg2 = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray());
-                            scrptr = nexptr;
+                            unk = fileData[pointer + 2].ToString();
+                            arg1 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            operand = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "set.flag(" + arg1 + Operator() + arg2 + ");");
                             break;
 
                         case 0x09:
                             // EndIf Statement
-                            scrptr = nexptr;
+                            pointer = nexptr;
                             indent = "\t";
                             sw.WriteLine(indent + "endif;");
                             break;
 
                         case 0x0A:
                             // Fade Screen
-                            arg1 = scrdat[scrptr + 2].ToString();
-                            arg2 = parseTime(scrdat.Skip(scrptr + 3).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseTime(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "fadeout(" + arg1 + ", time[" + arg2 + "]);");
                             break;
 
                         case 0x12:
                             // Call Script
-                            arg1 = Convert.ToString(scrdat[scrptr + 2] | (scrdat[scrptr + 3] << 8) | (scrdat[scrptr + 4] << 16)).PadLeft(8, '0');
-                            scrptr = nexptr;
+                            arg1 = Convert.ToString(fileData[pointer + 2] | (fileData[pointer + 3] << 8) | (fileData[pointer + 4] << 16)).PadLeft(8, '0');
+                            pointer = nexptr;
                             sw.WriteLine(indent + "load.script(" + arg1 + ");");
                             break;
 
                         case 0x15:
                             // Load Map
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "load.map(" + arg1 + ");");
                             break;
 
                         case 0x29:
                             // Camera Zoom
-                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "camera.zoom(time[" + arg1 + "], " + arg2 + ");");
                             break;
 
                         case 0x2B:
                             // Camera Pitch
-                            arg1 = parseTime(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "camera.pitch(time[" + arg1 + "], " + arg2 + ");");
+                            break;
+
+                        case 0x2C:
+                            // Camera Pan
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseTime(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "camera.pan(" + arg1 + ", " + arg2 + ", " + arg3 + ", time[" + arg4 + "]);");
                             break;
 
                         case 0x32:
                             // Print String
                             arg1 = parseString();
-                            scrptr = nexptr;
+                            pointer = nexptr;
                             sw.WriteLine(indent + "print(" + arg1 + ");");
                             break;
 
                         case 0x4F:
                             // Give Character
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "get.actor(class[" + arg1 + "], level[" + arg2 + "]);");
                             break;
 
                         case 0x50:
                             // Give HL
-                            arg1 = parseInt32(scrdat.Skip(scrptr + 2).Take(4).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt32(fileData.Skip(pointer + 2).Take(4).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "get.money(" + arg1 + ");");
                             break;
 
                         case 0x51:
                             // Give Item
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = parseInt16(scrdat.Skip(scrptr + 4).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "get.item(" + arg1 + ", " + arg2 + ");");
                             break;
 
                         case 0x53:
                             // Input Control
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "control.input(" + arg1 + ");");
                             break;
 
                         case 0x5A:
                             // Game State
-                            arg1 = scrdat[scrptr + 2].ToString();
-                            arg2 = scrdat[scrptr + 3].ToString();
-                            scrptr = nexptr;
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
+                            pointer = nexptr;
                             sw.WriteLine(indent + "set.state(" + arg1 + ", " + arg2 + ");");
+                            break;
+
+                        case 0x66:
+                            // Set Sprite
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
+                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.sprite(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
+                            break;
+
+                        case 0x6B:
+                            // Set Animation
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.anim(actor[" + arg1 + "], " + arg2 + ");");
+                            break;
+
+                        case 0x73:
+                            // Set Rotation
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseTime(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.rotation(actor[" + arg1 + "], time[" + arg2 + "], " + arg3 + ");");
                             break;
 
                         case 0x98:
                             // Set Talk ID
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            arg2 = Convert.ToString(scrdat[scrptr + 4] | (scrdat[scrptr + 5] << 8) | (scrdat[scrptr + 6] << 16));
-                            scrptr = nexptr;
-                            sw.WriteLine(indent + "set.talk(actor[" + arg1 + "], " + arg2 + ");");
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
+                            arg3 = Convert.ToString(fileData[pointer + 4] | (fileData[pointer + 5] << 8) | (fileData[pointer + 6] << 16));
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.talk(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
                             break;
 
                         case 0xC9:
                             // Show UI
-                            arg1 = parseInt16(scrdat.Skip(scrptr + 2).Take(2).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "load.menu(" + arg1 + ");");
                             break;
 
                         case 0xD0:
                             // Unknown Opcode 0xD0
                             unk = opcode.ToString("X2");
-                            arg1 = parseUnknown(scrdat.Skip(scrptr + 1).Take(4).ToArray());
-                            scrptr = scrptr + 5;
+                            arg1 = parseUnknown(fileData.Skip(pointer + 1).Take(4).ToArray());
+                            pointer = pointer + 5;
                             sw.WriteLine(indent + "unknown" + "(op[" + unk + "], args[" + "4" + "], " + arg1 + ");");
                             break;
 
                         case 0xDD:
                             // Print String for DS Version (Top Screen)
                             arg1 = parseString();
-                            scrptr = nexptr;
+                            pointer = nexptr;
                             sw.WriteLine(indent + "print.ds(" + arg1 + ");");
                             break;
 
                         default:
                             // Unknown Opcode
                             unk = opcode.ToString("X2");
-                            arg1 = parseUnknown(scrdat.Skip(scrptr + 2).Take(opcodeLen).ToArray());
-                            scrptr = nexptr;
+                            arg1 = parseUnknown(fileData.Skip(pointer + 2).Take(opcodeLen).ToArray());
+                            pointer = nexptr;
                             sw.WriteLine(indent + "unknown" + "(op[" + unk + "], args[" + argCount + "], " + arg1 + ");");
                             break;
                     }
@@ -256,39 +292,39 @@ namespace DisgaeaScriptEditor.Formats
         {
             if (count == 1)
             {
-                type = scrdat[scrptr + 4];
+                type = fileData[pointer + 4];
                 if (type != 0)
                 {
-                    type1 = scrdat[scrptr + 4].ToString();
-                    arg1 = parseUInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
-                    operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray());
-                    arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
-                    scrptr = scrptr + 4 + 7;
+                    type1 = fileData[pointer + 4].ToString();
+                    arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                    operand = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
+                    arg2 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
+                    pointer = pointer + 4 + 7;
                     sw.WriteLine(indent + "if (flag[" + arg1 + "]" + Operator() + arg2 + ") then");
                 }
                 else
                 {
-                    type1 = scrdat[scrptr + 4].ToString();
-                    arg1 = parseInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
-                    operand = scrdat[scrptr + 7].ToString();
-                    unk = scrdat[scrptr + 8].ToString();
-                    arg2 = parseUInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
-                    scrptr = scrptr + 4 + 7;
+                    type1 = fileData[pointer + 4].ToString();
+                    arg1 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                    operand = fileData[pointer + 7].ToString();
+                    unk = fileData[pointer + 8].ToString();
+                    arg2 = parseUInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
+                    pointer = pointer + 4 + 7;
                     sw.WriteLine(indent + "if (" + arg1 + Operator() + "flag[" + arg2 + "]) then");
                 }
             }
             else
             {
-                type1 = scrdat[scrptr + 4].ToString();
-                arg1 = parseUInt16(scrdat.Skip(scrptr + 5).Take(2).ToArray());
-                operand = parseInt16(scrdat.Skip(scrptr + 7).Take(2).ToArray()); ops1 = Operator();
-                arg2 = parseInt16(scrdat.Skip(scrptr + 9).Take(2).ToArray());
-                operand = scrdat[scrptr + 11].ToString(); ops2 = Operator();
-                type2 = scrdat[scrptr + 12].ToString();
-                arg3 = parseUInt16(scrdat.Skip(scrptr + 13).Take(2).ToArray());
-                operand = parseInt16(scrdat.Skip(scrptr + 15).Take(2).ToArray()); ops3 = Operator();
-                arg4 = parseInt16(scrdat.Skip(scrptr + 17).Take(2).ToArray());
-                scrptr = scrptr + 4 + 15;
+                type1 = fileData[pointer + 4].ToString();
+                arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                operand = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray()); ops1 = Operator();
+                arg2 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
+                operand = fileData[pointer + 11].ToString(); ops2 = Operator();
+                type2 = fileData[pointer + 12].ToString();
+                arg3 = parseUInt16(fileData.Skip(pointer + 13).Take(2).ToArray());
+                operand = parseInt16(fileData.Skip(pointer + 15).Take(2).ToArray()); ops3 = Operator();
+                arg4 = parseInt16(fileData.Skip(pointer + 17).Take(2).ToArray());
+                pointer = pointer + 4 + 15;
                 sw.WriteLine(indent + "if (flag[" + arg1 + "]" + ops1 + arg2 + ops2 + "flag[" + arg3 + "]" + ops3 + arg4 + ") then");
             }
         }

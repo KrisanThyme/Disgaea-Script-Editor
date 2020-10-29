@@ -15,23 +15,27 @@ namespace DisgaeaScriptEditor.Formats
         static int fileDataLength;
         static int pointer;
 
-        static byte count;
-        static byte type;
         static byte opcode;
         static byte opcodeLen;
         static byte argCount;
+        static byte varCount;
 
         static string unk;
+        static string arg0;
         static string arg1;
         static string arg2;
         static string arg3;
         static string arg4;
-        static string type1;
-        static string type2;
-        static string ops1;
-        static string ops2;
-        static string ops3;
+        static string arg5;
+        static string arg6;
+        static string arg7;
+        static string op1;
+        static string op2;
+        static string op3;
+        static string team;
         static string operand;
+        static string variable;
+        static string boolean;
 
         static string parseInt16(params byte[] args) => Convert.ToString(BitConverter.ToInt16(args, 0));
         static string parseUInt16(params byte[] args) => Convert.ToString(BitConverter.ToUInt16(args, 0));
@@ -105,18 +109,19 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x07:
                             // If Statement
-                            count = fileData[pointer + 3];
+                            unk = fileData[pointer + 2].ToString();
+                            varCount = fileData[pointer + 3];
                             IfStatement(); indent = "\t\t";
                             break;
 
                         case 0x08:
                             // Set Operation
-                            unk = fileData[pointer + 2].ToString();
+                            unk = fileData[pointer + 2].ToString("X2");
                             arg1 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
-                            operand = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                            arg2 = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
+                            operand = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray()); arg2 = Operator();
+                            arg3 = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.flag(" + arg1 + Operator() + arg2 + ");");
+                            sw.WriteLine(indent + "set.flag(" + arg1 + arg2 + arg3 + ");");
                             break;
 
                         case 0x09:
@@ -146,6 +151,13 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "load.map(" + arg1 + ");");
+                            break;
+
+                        case 0x28:
+                            // Camera Lock
+                            arg1 = fileData[pointer + 2].ToString(); boolean = arg1;
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "camera.lock = " + Boolean() + ";");
                             break;
 
                         case 0x29:
@@ -178,7 +190,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Print String
                             arg1 = parseString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "print(" + arg1 + ");");
+                            sw.WriteLine(indent + "print(\"" + arg1 + "\");");
                             break;
 
                         case 0x4F:
@@ -236,6 +248,16 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "set.anim(actor[" + arg1 + "], " + arg2 + ");");
                             break;
 
+                        case 0x6D:
+                            // Spawn NPC
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                            arg4 = fileData[pointer + 7].ToString(); team = arg4;
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "spawn.npc(actor[" + arg1 + "], class[" + arg2 + "], level[" + arg3 + "], team[" + arg4 + "]);");
+                            break;
+
                         case 0x73:
                             // Set Rotation
                             arg1 = fileData[pointer + 2].ToString();
@@ -243,6 +265,19 @@ namespace DisgaeaScriptEditor.Formats
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "set.rotation(actor[" + arg1 + "], time[" + arg2 + "], " + arg3 + ");");
+                            break;
+
+                        case 0x7A:
+                            // Set Color \ Alpha
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
+                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg5 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            arg6 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
+                            arg7 = parseInt16(fileData.Skip(pointer + 12).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.filter(actor[" + arg1 + "], " + arg2 + ", red[" + arg3 + "], blue[" + arg4 + "], green[" + arg5 + "], alpha[" + arg6 + "], " + arg7 + ");");
                             break;
 
                         case 0x98:
@@ -273,7 +308,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Print String for DS Version (Top Screen)
                             arg1 = parseString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "print.ds(" + arg1 + ");");
+                            sw.WriteLine(indent + "print.ds(\"" + arg1 + "\");");
                             break;
 
                         default:
@@ -290,42 +325,33 @@ namespace DisgaeaScriptEditor.Formats
 
         public static void IfStatement()
         {
-            if (count == 1)
+            if (varCount == 1)
             {
-                type = fileData[pointer + 4];
-                if (type != 0)
-                {
-                    type1 = fileData[pointer + 4].ToString();
-                    arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                    operand = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
-                    arg2 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
-                    pointer = pointer + 4 + 7;
-                    sw.WriteLine(indent + "if (flag[" + arg1 + "]" + Operator() + arg2 + ") then");
-                }
-                else
-                {
-                    type1 = fileData[pointer + 4].ToString();
-                    arg1 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                    operand = fileData[pointer + 7].ToString();
-                    unk = fileData[pointer + 8].ToString();
-                    arg2 = parseUInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
-                    pointer = pointer + 4 + 7;
-                    sw.WriteLine(indent + "if (" + arg1 + Operator() + "flag[" + arg2 + "]) then");
-                }
+                variable = fileData[pointer + 4].ToString();
+                arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray()); arg0 = arg1; arg1 = Variable();
+                operand = fileData[pointer + 7].ToString(); op1 = Operator();
+                variable = fileData[pointer + 8].ToString();
+                arg2 = parseUInt16(fileData.Skip(pointer + 9).Take(2).ToArray()); arg0 = arg2; arg2 = Variable();
+                pointer = pointer + 4 + 7;
+                sw.WriteLine(indent + "if (" + arg1 + op1 + arg2 + ") then");
+
             }
             else
             {
-                type1 = fileData[pointer + 4].ToString();
-                arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                operand = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray()); ops1 = Operator();
-                arg2 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
-                operand = fileData[pointer + 11].ToString(); ops2 = Operator();
-                type2 = fileData[pointer + 12].ToString();
-                arg3 = parseUInt16(fileData.Skip(pointer + 13).Take(2).ToArray());
-                operand = parseInt16(fileData.Skip(pointer + 15).Take(2).ToArray()); ops3 = Operator();
-                arg4 = parseInt16(fileData.Skip(pointer + 17).Take(2).ToArray());
+                variable = fileData[pointer + 4].ToString();
+                arg1 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray()); arg0 = arg1; arg1 = Variable();
+                operand = fileData[pointer + 7].ToString(); op1 = Operator();
+                variable = fileData[pointer + 8].ToString();
+                arg2 = parseUInt16(fileData.Skip(pointer + 9).Take(2).ToArray()); arg0 = arg2; arg2 = Variable();
+                operand = fileData[pointer + 11].ToString(); op2 = Operator();
+                variable = fileData[pointer + 12].ToString();
+                arg3 = parseUInt16(fileData.Skip(pointer + 13).Take(2).ToArray()); arg0 = arg3; arg3 = Variable();
+                operand = fileData[pointer + 15].ToString(); op3 = Operator();
+                variable = fileData[pointer + 16].ToString();
+                arg4 = parseUInt16(fileData.Skip(pointer + 17).Take(2).ToArray()); arg0 = arg4; arg4 = Variable();
+
                 pointer = pointer + 4 + 15;
-                sw.WriteLine(indent + "if (flag[" + arg1 + "]" + ops1 + arg2 + ops2 + "flag[" + arg3 + "]" + ops3 + arg4 + ") then");
+                sw.WriteLine(indent + "if (" + arg1 + op1 + arg2 + op2 + arg3 + op3 + arg4 + ") then");
             }
         }
 
@@ -352,6 +378,66 @@ namespace DisgaeaScriptEditor.Formats
                 default:
                     // Unknown Operator
 					return " ?? ";
+            }
+        }
+
+        public static string Variable()
+        {
+            switch (variable)
+            {
+                case "0":
+                    // Int16
+                    return arg0;
+
+                case "1":
+                    // Flag
+                    return "flag[" + arg0 + "]";
+
+                default:
+                    // Unknown Var Type
+                    return "unknown";
+            }
+        }
+
+        public static string Boolean()
+        {
+            switch (boolean)
+            {
+                case "0":
+                    return "false";
+
+                case "1":
+                    return "true";
+
+                default:
+                    // Unknown Bool
+                    return "error";
+            }
+        }
+
+        public static string Team()
+        {
+            switch (team)
+            {
+                case "0":
+                    // Player Controlled Characters
+                    return "ally";
+
+                case "1":
+                    // Enemy Characters (Attacks Everyone)
+                    return "enemy";
+
+                case "2":
+                    // Neutral Characters (Attacks Baddies)
+                    return "neutral";
+
+                case "3":
+                    // Nemesis Characters (Attacks Player)
+                    return "nemesis";
+
+                default:
+                    // Unknown Team
+                    return "error";
             }
         }
     }

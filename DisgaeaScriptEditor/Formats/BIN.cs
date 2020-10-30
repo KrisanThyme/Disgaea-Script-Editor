@@ -98,13 +98,13 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x05:
                             // Lock Controls
                             pointer = nexptr;
-                            sw.WriteLine(indent + "control.lock();");
+                            sw.WriteLine(indent + "input.lock(true);");
                             break;
 
                         case 0x06:
                             // Unlock Controls
                             pointer = nexptr;
-                            sw.WriteLine(indent + "control.unlock();");
+                            sw.WriteLine(indent + "input.lock(false);");
                             break;
 
                         case 0x07:
@@ -193,6 +193,14 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "print(\"" + arg1 + "\");");
                             break;
 
+                        case 0x4E:
+                            // Spawn Actor
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "spawn.actor(actor[" + arg1 + "], " + arg2 + ");");
+                            break;
+
                         case 0x4F:
                             // Give Character
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
@@ -220,7 +228,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Input Control
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "control.input(" + arg1 + ");");
+                            sw.WriteLine(indent + "input(" + arg1 + ");");
                             break;
 
                         case 0x5A:
@@ -229,6 +237,18 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = fileData[pointer + 3].ToString();
                             pointer = nexptr;
                             sw.WriteLine(indent + "set.state(" + arg1 + ", " + arg2 + ");");
+                            break;
+
+                        case 0x65:
+                            // Set Position
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
+                            arg5 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
+                            arg6 = parseTime(fileData.Skip(pointer + 11).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "set.pos(actor[" + arg1 + "], " + arg2 + ", x[" + arg3 + "], z[" + arg4 + "], y[" + arg5 + "], time[" + arg6 + "]);");
                             break;
 
                         case 0x66:
@@ -256,6 +276,15 @@ namespace DisgaeaScriptEditor.Formats
                             arg4 = fileData[pointer + 7].ToString(); team = arg4;
                             pointer = nexptr;
                             sw.WriteLine(indent + "spawn.npc(actor[" + arg1 + "], class[" + arg2 + "], level[" + arg3 + "], team[" + arg4 + "]);");
+                            break;
+
+                        case 0x6E:
+                            // Spawn Prop
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
+                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "spawn.prop(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
                             break;
 
                         case 0x73:

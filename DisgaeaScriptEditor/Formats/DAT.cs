@@ -34,11 +34,6 @@ namespace DisgaeaScriptEditor.Formats
         static byte[] dataArray;
         static byte[] packedArray;
 
-        static List<byte[]> pointerList = new List<byte[]>();
-        static List<byte[]> scriptList = new List<byte[]>();
-        static List<byte[]> dataList = new List<byte[]>();
-        static List<byte[]> packedList = new List<byte[]>();
-
         static int storeInt32(params byte[] args) => BitConverter.ToInt32(args, 0);
 
         static BinaryReader br;
@@ -110,6 +105,12 @@ namespace DisgaeaScriptEditor.Formats
 
         public static void Pack()
         {
+            List<byte[]> pointerList = new List<byte[]>();
+            List<byte[]> scriptList = new List<byte[]>();
+            List<byte[]> dataList = new List<byte[]>();
+            List<byte[]> packedList = new List<byte[]>();
+
+            dataSize = 0;
             fileCount = Directory.EnumerateFiles(MainWindow.UserFolder, "*.bin").Count();
             header = BitConverter.GetBytes(fileCount);
             pointerList.Add(BitConverter.GetBytes(0));

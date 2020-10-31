@@ -118,5 +118,10 @@ namespace DisgaeaScriptEditor
                 return;
             }
         }
+
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.MessageBox.Show("Programmed By: Krisan Thyme\nSpecial Thanks: XKeeper, FireFly, and xdaniel", "About");
+        }
     }
 }

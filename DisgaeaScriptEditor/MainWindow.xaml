@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DisgaeaScriptEditor"
         mc:Ignorable="d"
-        Title="Disgaea Script Editor" Height="200" Width="370"
+        Title="Disgaea Script Editor" Height="225" Width="375"
         Icon="Icon.ico">
     <Grid>
         <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="66" Margin="10,10,0,0" VerticalAlignment="Top" Width="110"/>
@@ -22,7 +22,9 @@
         <TextBlock HorizontalAlignment="Left" Margin="240,10,0,0" TextWrapping="Wrap" Text="Script Compiler" VerticalAlignment="Top" Width="110" TextAlignment="Center"/>
         <Button x:Name="CompileButton" Content="Compile Script File" HorizontalAlignment="Left" Margin="240,31,0,0" VerticalAlignment="Top" Width="110" IsEnabled="False"/>
         <Button x:Name="CompileAllButton" Content="Compile All Scripts" HorizontalAlignment="Left" Margin="240,56,0,0" VerticalAlignment="Top" Width="110" IsEnabled="False"/>
-        <Image HorizontalAlignment="Left" Height="78" Margin="80,80,0,0" VerticalAlignment="Top" Width="200" Source="disgaealogo.png"/>
+
+        <Image HorizontalAlignment="Left" Height="78" Margin="80,105,0,0" VerticalAlignment="Top" Width="200" Source="disgaealogo.png"/>
+        <Button x:Name="AboutButton" Content="About" HorizontalAlignment="Left" Margin="10,81,0,0" VerticalAlignment="Top" Width="340" Click="AboutButton_Click"/>
 
     </Grid>
 </Window>

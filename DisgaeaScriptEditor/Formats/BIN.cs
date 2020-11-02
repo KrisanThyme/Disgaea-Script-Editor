@@ -79,7 +79,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Sleep
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sleep(time[" + arg1 + "]);");
+                            sw.WriteLine(indent + "sleep(timer = " + arg1 + ");");
                             break;
 
                         case 0x02:
@@ -136,14 +136,14 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseTime(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "fadeout(" + arg1 + ", time[" + arg2 + "]);");
+                            sw.WriteLine(indent + "system.fade(intensity = " + arg1 + ", timer = " + arg2 + ");");
                             break;
 
                         case 0x0B:
                             // Wait for Input
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "input.wait(time[" + arg2 + "]);");
+                            sw.WriteLine(indent + "input.wait(timer = " + arg2 + ");");
                             break;
 
                         case 0x0C:
@@ -151,24 +151,27 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseTime(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "system.shake(intensity [" + arg1 + ", time[" + arg2 + "]);");
+                            sw.WriteLine(indent + "system.shake(intensity = " + arg1 + ", timer = " + arg2 + ");");
                             break;
 
                      /* case 0x0D:
-                            // Unknown Opcode. Not used in any retail script.
-                            break; */
+                               // Unknown Opcode. Not used in any retail script.
+                               break; */
 
-                     /* case 0x0E:
-                            // NEEDS PARSING
-                            break; */
+                        case 0x0E:
+                            // Set Fade Color
+                            arg1 = Convert.ToInt32(fileData[pointer + 4] | (fileData[pointer + 3] << 8) | (fileData[pointer + 2] << 16)).ToString("X2").PadLeft(6, '0');
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "system.fadecolor(" + arg1 + ");");
+                            break;
 
                      /* case 0x0F, 0x10:
-                            // Unknown Opcode. Not used in any retail script.
-                            break; */
+                               // Unknown Opcode. Not used in any retail script.
+                               break; */
 
                      /* case 0x11:
-                            // NEEDS PARSING
-                            break; */
+                               // NEEDS PARSING
+                               break; */
 
                         case 0x12:
                             // Call Script
@@ -217,7 +220,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg4 = Convert.ToInt32(fileData[pointer + 12] | (fileData[pointer + 11] << 8) | (fileData[pointer + 10] << 16)).ToString("X2").PadLeft(6, '0');
                             arg5 = Convert.ToInt32(fileData[pointer + 15] | (fileData[pointer + 14] << 8) | (fileData[pointer + 13] << 16)).ToString("X2").PadLeft(6, '0');
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.gradient(time[" + arg1 + "], topleft[" + arg2 + "], topright[" + arg3 + "], bottomleft[" + arg4 + "], bottomright[" + arg5 + "]);");
+                            sw.WriteLine(indent + "set.gradient(topLeft = " + arg2 + ", topRight = " + arg3 + ", bottomLeft = " + arg4 + ", bottomRight = " + arg5 + ", timer = " + arg1 + ");");
                             break;
 
                      /* case 0x1C:
@@ -243,7 +246,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
                             arg4 = parseTime(fileData.Skip(pointer + 8).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "cursor.pos(" + arg1 + ", x[" + arg2 + "], y[" + arg3 + "], time[" + arg4 + "]);");
+                            sw.WriteLine(indent + "cursor.pos(" + arg1 + ", x = " + arg2 + ", y = " + arg3 + ", time = " + arg4 + ");");
                             break;
 
                         case 0x28:
@@ -258,7 +261,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "camera.zoom(time[" + arg1 + "], " + arg2 + ");");
+                            sw.WriteLine(indent + "camera.zoom(" + arg2 + ", timer = " + arg1 + ");");
                             break;
 
                      /* case 0x2A:
@@ -270,7 +273,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "camera.pitch(time[" + arg1 + "], " + arg2 + ");");
+                            sw.WriteLine(indent + "camera.pitch(" + arg2 + ", timer = " + arg1 + ");");
                             break;
 
                         case 0x2C:
@@ -280,7 +283,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
                             arg4 = parseTime(fileData.Skip(pointer + 8).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "camera.pan(" + arg1 + ", x[" + arg2 + "], y[" + arg3 + "], time[" + arg4 + "]);");
+                            sw.WriteLine(indent + "camera.pan(" + arg1 + ", x = " + arg2 + ", y = " + arg3 + ", timer = " + arg4 + ");");
                             break;
 
                      /* case 0x2D, 0x2E:
@@ -349,7 +352,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "spawn.actor(actor[" + arg1 + "], " + arg2 + ");");
+                            sw.WriteLine(indent + "spawn.actor(entity = " + arg1 + ", class = " + arg2 + ");");
                             break;
 
                         case 0x4F:
@@ -357,7 +360,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "get.actor(class[" + arg1 + "], level[" + arg2 + "]);");
+                            sw.WriteLine(indent + "get.actor(class = " + arg1 + ", level = " + arg2 + ");");
                             break;
 
                         case 0x50:
@@ -428,23 +431,23 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x65:
                             // Set Position
-                            arg1 = fileData[pointer + 2].ToString();
-                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
-                            arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                            arg4 = parseInt16(fileData.Skip(pointer + 7).Take(2).ToArray());
-                            arg5 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
-                            arg6 = parseTime(fileData.Skip(pointer + 11).Take(2).ToArray());
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            arg5 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
+                            arg6 = parseTime(fileData.Skip(pointer + 12).Take(2).ToArray());
+                            arg7 = fileData[pointer + 14].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.pos(actor[" + arg1 + "], " + arg2 + ", x[" + arg3 + "], z[" + arg4 + "], y[" + arg5 + "], time[" + arg6 + "]);");
+                            sw.WriteLine(indent + "set.pos(entity = " + arg1 + ", " + arg2 + ", x = " + arg3 + ", y = " + arg5 + ", z = " + arg4 + ", time = " + arg6 + ", " + arg7 + ");");
                             break;
 
                         case 0x66:
                             // Set Sprite
-                            arg1 = fileData[pointer + 2].ToString();
-                            arg2 = fileData[pointer + 3].ToString();
-                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.sprite(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
+                            sw.WriteLine(indent + "set.sprite(entity = " + arg1 + ", class = " + arg2 + ");");
                             break;
 
                         case 0x67:
@@ -452,7 +455,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt32(fileData.Skip(pointer + 3).Take(4).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.anim(actor[" + arg1 + "], " + arg2 + ");");
+                            sw.WriteLine(indent + "set.anim(entity = " + arg1 + ", " + arg2 + ");");
                             break;
 
                      /* case 0x68, 0x69, 0x6A, 0x6B:
@@ -470,16 +473,15 @@ namespace DisgaeaScriptEditor.Formats
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             arg4 = fileData[pointer + 7].ToString(); team = arg4;
                             pointer = nexptr;
-                            sw.WriteLine(indent + "spawn.npc(actor[" + arg1 + "], class[" + arg2 + "], level[" + arg3 + "], team[" + arg4 + "]);");
+                            sw.WriteLine(indent + "spawn.npc(entity = " + arg1 + ", class = " + arg2 + ", level = " + arg3 + ", role = " + arg4 + ");");
                             break;
 
                         case 0x6E:
                             // Spawn Prop
-                            arg1 = fileData[pointer + 2].ToString();
-                            arg2 = fileData[pointer + 3].ToString();
-                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "spawn.prop(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
+                            sw.WriteLine(indent + "spawn.prop(entity = " + arg1 + ", class = "+ arg2 + ");");
                             break;
 
                      /* case 0x6F, 0x70, 0x71, 0x72:
@@ -492,7 +494,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = parseTime(fileData.Skip(pointer + 3).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.rot(actor[" + arg1 + "], time[" + arg2 + "], " + arg3 + ");");
+                            sw.WriteLine(indent + "set.rot(entity = " + arg1 + ", rotate = " + arg3 + ", timer = " + arg2 + ");");
                             break;
 
                      /* case 0x74:
@@ -509,15 +511,15 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x7A:
                             // Set Color \ Alpha
-                            arg1 = fileData[pointer + 2].ToString();
-                            arg2 = fileData[pointer + 3].ToString();
-                            arg3 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
-                            arg4 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
-                            arg5 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
-                            arg6 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
-                            arg7 = parseInt16(fileData.Skip(pointer + 12).Take(2).ToArray());
+                            // Yes the Actor, Color, and Alpha values are Int16 each.. I don't know why either.
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            arg5 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
+                            arg6 = parseTime(fileData.Skip(pointer + 12).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.filter(actor[" + arg1 + "], " + arg2 + ", red[" + arg3 + "], blue[" + arg4 + "], green[" + arg5 + "], alpha[" + arg6 + "], " + arg7 + ");");
+                            sw.WriteLine(indent + "set.filter(entity = " + arg1 + ", red = " + arg2 + ", blue = " + arg3 + ", green = " + arg4 + ", alpha = " + arg5 + ", timer = " + arg6 + ");");
                             break;
 
                      /* case 0x7B:
@@ -537,7 +539,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.voice(id[" + arg1 + "], volume[" + arg2 + "]);");
+                            sw.WriteLine(indent + "sound.voice(" + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x84, 0x85, 0x86:
@@ -553,7 +555,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.battle(id[" + arg1 + "], volume[" + arg2 + "]);");
+                            sw.WriteLine(indent + "sound.battle(" + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x89, 0x8A, 0x8B:
@@ -566,7 +568,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = fileData[pointer + 4].ToString();
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.sfx(id[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
+                            sw.WriteLine(indent + "sound.sfx(" + arg1 + ", " + arg2 + ", volume = " + arg3 + ");");
                             break;
 
                      /* case 0x8D:
@@ -581,7 +583,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Play BGM
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgm(id[" + arg1 + "]);");
+                            sw.WriteLine(indent + "sound.bgm(" + arg1 + ");");
                             break;
 
                         case 0x92:
@@ -589,7 +591,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgmv(volume[" + arg1 + "], time[" + arg2 + "]);");
+                            sw.WriteLine(indent + "sound.bgmvol(volume = " + arg1 + ", timer = " + arg2 + ");");
                             break;
 
                      /* case 0x93, 0x94, 0x95:
@@ -603,10 +605,9 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x98:
                             // Set Talk ID
                             arg1 = fileData[pointer + 2].ToString();
-                            arg2 = fileData[pointer + 3].ToString();
-                            arg3 = Convert.ToString(fileData[pointer + 4] | (fileData[pointer + 5] << 8) | (fileData[pointer + 6] << 16));
+                            arg2 = Convert.ToString(fileData[pointer + 4] | (fileData[pointer + 5] << 8) | (fileData[pointer + 6] << 16));
                             pointer = nexptr;
-                            sw.WriteLine(indent + "set.talk(actor[" + arg1 + "], " + arg2 + ", " + arg3 + ");");
+                            sw.WriteLine(indent + "set.talk(entity = " + arg1 + ", dialog = " + arg3 + ";");
                             break;
 
                      /* case 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF,
@@ -622,7 +623,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg4 = fileData[pointer + 5].ToString();
                             arg5 = fileData[pointer + 6].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "system(function[" + arg1 + "], " + arg2 + ", " + arg3 + ", " + arg4 + ", " + arg5 + ");");
+                            sw.WriteLine(indent + "system(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 + ", " + arg5 + ");");
                             break;
 
                         case 0xC9:
@@ -641,7 +642,7 @@ namespace DisgaeaScriptEditor.Formats
                             unk = opcode.ToString("X2");
                             arg1 = parseUnknown(fileData.Skip(pointer + 1).Take(4).ToArray());
                             pointer = pointer + 5;
-                            sw.WriteLine(indent + "unknown" + "(op[" + unk + "], args[" + "4" + "], " + arg1 + ");");
+                            sw.WriteLine(indent + "unknown" + "(opcode = " + unk + ", length = " + "4" + ", args[" + arg1 + "]);");
                             break;
 
                      /* case 0xD1:
@@ -668,7 +669,7 @@ namespace DisgaeaScriptEditor.Formats
                             unk = opcode.ToString("X2");
                             arg1 = parseUnknown(fileData.Skip(pointer + 2).Take(opcodeLen).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "unknown" + "(op[" + unk + "], args[" + argCount + "], " + arg1 + ");");
+                            sw.WriteLine(indent + "unknown" + "(opcode = " + unk + ", length = " + argCount + ", args[" + arg1 + "]);");
                             break;
                     }
                 }

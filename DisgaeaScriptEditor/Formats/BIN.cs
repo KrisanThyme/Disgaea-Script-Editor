@@ -34,6 +34,7 @@ namespace DisgaeaScriptEditor.Formats
         static string op3;
         static string role;
         static string stance;
+        static string direction;
         static string operand;
         static string variable;
         static string boolean;
@@ -244,17 +245,24 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "actor.asset.pos(entity = " + arg1 + ", pos.x = " + arg2 + ", pos.y = " + arg3 + ", pos.z = " + arg4 + ", " + arg5 + ");");
                             break;
 
-                        /* case 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22:
-                               // Unknown Opcode. Not used in any retail script.
-                               break; */
+                     /* case 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22:
+                            // Unknown Opcode. Not used in any retail script.
+                            break; */
 
-                        /* case 0x23, 0x24:
-                               // NEEDS PARSING
-                               break; */
+                        case 0x23:
+                            // Disable Actor
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "actor.disable(entity = " + arg1 + ");");
+                            break;
 
-                        /* case 0x25, 0x26:
-                               // Unknown Opcode. Not used in any retail script.
-                               break; */
+                     /* case 0x24:
+                            // NEEDS PARSING
+                            break; */
+
+                     /* case 0x25, 0x26:
+                            // Unknown Opcode. Not used in any retail script.
+                            break; */
 
                         case 0x27:
                             // Move Cursor
@@ -281,9 +289,16 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "camera.zoom(" + arg2 + ", timer = " + arg1 + ");");
                             break;
 
-                     /* case 0x2A:
-                            // NEEDS PARSING
-                            break; */
+                        case 0x2A:
+                            // Camera Roll
+                            // The "Z-Pos" doesn't seem to work and always seems set to 0 in retail scripts.
+                            arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "camera.roll(pos.x = " + arg2 + ", pos.y = " + arg3 + ", timer = " + arg1 + ");");
+                            break;
 
                         case 0x2B:
                             // Camera Pitch
@@ -303,9 +318,25 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "camera.pan(" + arg1 + ", pos.x = " + arg2 + ", pos.y = " + arg3 + ", timer = " + arg4 + ");");
                             break;
 
-                     /* case 0x2D, 0x2E:
-                            // NEEDS PARSING
-                            break; */
+                        case 0x2D:
+                            // Y Position Properties
+                            // Setting the arguement to 0 will cause the Actor to freeze at their current Y position, ignoring all gravity.
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "actor.pos.lock(entity = " + arg1 + ", " + arg2 + ");");
+                            break;
+
+                        case 0x2E:
+                            // Camera Rotation
+                            // The "Z-Pos" doesn't seem to work and always seems set to 0 in retail scripts.
+                            arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "camera.rotate(pos.x = " + arg2 + ", pos.y = " + arg3 + ", timer = " + arg1 + ");");
+                            break;
 
                      /* case 0x2F, 0x30, 0x31:
                             // Unknown Opcode. Not used in any retail script.
@@ -471,9 +502,9 @@ namespace DisgaeaScriptEditor.Formats
                             // Play Combat Animation
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
-                            arg3 = fileData[pointer + 6].ToString();
+                            arg3 = fileData[pointer + 6].ToString(); //direction = arg3; arg3 = Direction();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.battle.anim(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
+                            sw.WriteLine(indent + "actor.anim.index(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
                             break;
 
                      /* case 0x68, 0x69, 0x6A:
@@ -483,9 +514,9 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x6B:
                             // Actor Stance
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
-                            arg2 = fileData[pointer + 4].ToString(); stance = arg2; arg2 = Stance();
+                            arg2 = fileData[pointer + 4].ToString(); //stance = arg2; arg2 = Stance();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.mode(entity = " + arg1 + ", stance = " + arg2 + ");");
+                            sw.WriteLine(indent + "actor.mode(entity = " + arg1 + ", " + arg2 + ");");
                             break;
 
                      /* case 0x6C:
@@ -497,7 +528,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                            arg4 = fileData[pointer + 7].ToString(); role = arg4; arg4 = Role();
+                            arg4 = fileData[pointer + 7].ToString(); //role = arg4; arg4 = Role();
                             pointer = nexptr;
                             sw.WriteLine(indent + "actor.npc(entity = " + arg1 + ", charaID = " + arg2 + ", level = " + arg3 + ", role = " + arg4 + ");");
                             break;
@@ -539,13 +570,11 @@ namespace DisgaeaScriptEditor.Formats
                             // Actor Filter
                             // Yes the Actor, Color, and Alpha values are Int16 each.. I don't know why either.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
-                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
-                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
-                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
-                            arg5 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
-                            arg6 = parseTime(fileData.Skip(pointer + 12).Take(2).ToArray());
+                            arg2 = Convert.ToInt32(fileData[pointer + 8] | (fileData[pointer + 6] << 8) | (fileData[pointer + 4] << 16)).ToString("X2").PadLeft(6, '0');
+                            arg3 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
+                            arg4 = parseTime(fileData.Skip(pointer + 12).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.filter(entity = " + arg1 + ", red = " + arg2 + ", blue = " + arg3 + ", green = " + arg4 + ", alpha = " + arg5 + ", timer = " + arg6 + ");");
+                            sw.WriteLine(indent + "actor.filter(entity = " + arg1 + ", rgb = " + arg2 + ", alpha = " + arg3 + ", timer = " + arg4 + ");");
                             break;
 
                      /* case 0x7B:
@@ -581,7 +610,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.battle(" + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.battle.voice(" + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x89, 0x8A, 0x8B:
@@ -594,7 +623,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = fileData[pointer + 4].ToString();
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.sfx(" + arg1 + ", " + arg2 + ", volume = " + arg3 + ");");
+                            sw.WriteLine(indent + "sound.sfx(" + arg1 + ", samplerate = " + arg3 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x8D:
@@ -617,7 +646,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgmvol(volume = " + arg1 + ", timer = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.bgm.vol(volume = " + arg1 + ", timer = " + arg2 + ");");
                             break;
 
                      /* case 0x93, 0x94, 0x95:
@@ -633,7 +662,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = Convert.ToString(fileData[pointer + 4] | (fileData[pointer + 5] << 8) | (fileData[pointer + 6] << 16));
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.talk(entity = " + arg1 + ", talkID = " + arg3 + ";");
+                            sw.WriteLine(indent + "actor.talk(entity = " + arg1 + ", talkID = " + arg2 + ";");
                             break;
 
                      /* case 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF,
@@ -756,7 +785,7 @@ namespace DisgaeaScriptEditor.Formats
 
                 default:
                     // Unknown
-					return " ?? ";
+					return " error ";
             }
         }
 
@@ -838,6 +867,32 @@ namespace DisgaeaScriptEditor.Formats
                 case "2":
                     // Neutral
                     return "neutral";
+
+                default:
+                    // Unknown
+                    return "error";
+            }
+        }
+
+        public static string Direction()
+        {
+            switch (direction)
+            {
+                case "0":
+                    // North East
+                    return "northEast";
+
+                case "1":
+                    // South East
+                    return "southEast";
+
+                case "2":
+                    // South West
+                    return "southWest";
+
+                case "3":
+                    // North West
+                    return "northWest";
 
                 default:
                     // Unknown

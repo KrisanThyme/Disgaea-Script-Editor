@@ -7,6 +7,9 @@ using System.IO;
 using System.Windows;
 using Ookii.Dialogs.Wpf;
 
+using formApp = System.Windows.Forms.Application;
+using formMBox = System.Windows.Forms.MessageBox;
+
 namespace DisgaeaScriptEditor
 {
     public partial class MainWindow : Window 
@@ -15,6 +18,9 @@ namespace DisgaeaScriptEditor
         public static string UserFolder;
         public static string Extension;
         public static byte[] WorkingFile;
+
+        public static int maxVal;
+        public static double curVal;
 
         static VistaOpenFileDialog ofd = new VistaOpenFileDialog();
         static VistaFolderBrowserDialog fbd = new VistaFolderBrowserDialog();
@@ -33,7 +39,8 @@ namespace DisgaeaScriptEditor
             if (!string.IsNullOrEmpty(UserFile))
             {
                 Formats.DAT.Unpack();
-                System.Windows.Forms.MessageBox.Show("Unpacking Complete.", "Script Unpacker");
+                formMBox.Show("Unpacking Complete.", "Script Unpacker");
+                progressBar.Value = 0;
                 ofd.FileName = null;
             }
             else
@@ -50,7 +57,7 @@ namespace DisgaeaScriptEditor
             if (!string.IsNullOrEmpty(UserFolder))
             {
                 Formats.DAT.Pack();
-                System.Windows.Forms.MessageBox.Show("Packing Complete.", "Script Packer");
+                formMBox.Show("Packing Complete.", "Script Packer");
                 fbd.SelectedPath = null;
             }
             else
@@ -72,12 +79,12 @@ namespace DisgaeaScriptEditor
                 {
                     WorkingFile = File.ReadAllBytes(UserFile);
                     Formats.BIN.Parse();
-                    System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+                    formMBox.Show("Parsing Complete.", "Script Parser");
                     ofd.FileName = null;
                 }
                 else
                 {
-                    System.Windows.Forms.MessageBox.Show("The selected file was not a valid Disgaea Script.", "Script Parser");
+                    formMBox.Show("The selected file was not a valid Disgaea Script.", "Script Parser");
                     ofd.FileName = null;
                     return;
                 }
@@ -97,18 +104,27 @@ namespace DisgaeaScriptEditor
             {
                 if (Directory.GetFiles(UserFolder, "*.bin").Length != 0)
                 {
+                    maxVal = Directory.EnumerateFiles(UserFolder, "*.bin").Count();
+                    progressBar.Maximum = maxVal;
+
                     foreach (string scrfile in Directory.EnumerateFiles(UserFolder, "*.bin"))
                     {
+                        curVal = progressBar.Value;
+                        progressBar.Value = curVal + 1;
+                        formApp.DoEvents();
+
                         UserFile = scrfile;
                         WorkingFile = File.ReadAllBytes(UserFile);
                         Formats.BIN.Parse();
                     }
-                    System.Windows.Forms.MessageBox.Show("Parsing Complete.", "Script Parser");
+
+                    formMBox.Show("Parsing Complete.", "Script Parser");
+                    progressBar.Value = 0;
                     fbd.SelectedPath = null;
                 }
                 else
                 {
-                    System.Windows.Forms.MessageBox.Show("No valid files for parsing were found.", "Script Parser");
+                    formMBox.Show("No valid files for parsing were found.", "Script Parser");
                     fbd.SelectedPath = null;
                     return;
                 }
@@ -121,7 +137,7 @@ namespace DisgaeaScriptEditor
 
         private void AboutButton_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.MessageBox.Show("Programmed By: Krisan Thyme\nSpecial Thanks: XKeeper, FireFly, and xdaniel", "About");
+            formMBox.Show("Programmed By: Krisan Thyme\nSpecial Thanks: XKeeper, FireFly, and xdaniel", "About");
         }
     }
 }

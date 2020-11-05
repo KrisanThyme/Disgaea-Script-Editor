@@ -32,9 +32,6 @@ namespace DisgaeaScriptEditor.Formats
         static string op1;
         static string op2;
         static string op3;
-        static string role;
-        static string stance;
-        static string direction;
         static string operand;
         static string variable;
         static string boolean;
@@ -97,6 +94,10 @@ namespace DisgaeaScriptEditor.Formats
                             }
                             break;
 
+                     /* case 0x03, 0x04:
+                           // NEEDS PARSING
+                           break; */
+
                         case 0x05:
                             // Lock Player Controls
                             pointer = nexptr;
@@ -111,7 +112,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x07:
                             // If Statement
-                            // The Unknown is always set to 0x00 in the retail game.
+                            // The Unknown is always set to 0x00 in retail scripts.
                             unk = fileData[pointer + 2].ToString();
                             varCount = fileData[pointer + 3];
                             IfStatement(); indent = "\t\t";
@@ -119,7 +120,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x08:
                             // Set Operation
-                            // The Unknown is always set to 0x01 in the retail game.
+                            // The Unknown is always set to 0x01 in retail scripts.
                             unk = fileData[pointer + 2].ToString("X2");
                             arg1 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             operand = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray()); arg2 = Operator();
@@ -137,7 +138,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x0A:
                             // Fade Screen
-                            // Setting the Intensity level to 0x00 will unfade the screen if already faded out.
+                            // Setting the Intensity level to 0x00 will unfade the screen if it is currently faded out.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseTime(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
@@ -146,7 +147,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x0B:
                             // Wait for Input
-                            // Pauses the game for the set duration unless Confirm or Cancel is pressed before then.
+                            // Pauses the game for the set duration unless Confirm or Cancel is pressed before time has elapsed.
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "input.wait(timer = " + arg2 + ");");
@@ -182,6 +183,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x12:
                             // Call Script
+                            // After being called, the current script will resume where it left off.
                             arg1 = Convert.ToString(fileData[pointer + 2] | (fileData[pointer + 3] << 8) | (fileData[pointer + 4] << 16)).PadLeft(8, '0');
                             pointer = nexptr;
                             sw.WriteLine(indent + "system.load.script(" + arg1 + ");");
@@ -193,6 +195,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x15:
                             // Load Map
+                            // Loading is instantaneous, with no transition or pause on PC!
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "system.load.map(" + arg1 + ");");
@@ -200,6 +203,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x16:
                             // Load Item World Map
+                            // Loading is instantaneous, with no transition or pause on PC!
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "system.load.itemworld(" + arg1 + ");");
@@ -267,9 +271,8 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x27:
                             // Move Cursor
-                            // The offset arg displaces the position of the actor, this can even off-center an actor from its tile.
+                            // The offset arg displaces the position of the cursor, this can even off-center the cursor from a tile.
                             // Sadly, it's not currently understood how it works or why the values are defined as they are in retail scripts.
-                            // Common retail values are 0xC9, 0xCB, and oddly enough the same as the Entity ID itself. 0xC9 seems to always ensure the exact XYZ is used, however.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -280,7 +283,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x28:
                             // Camera Lock and Unlock
-                            arg1 = fileData[pointer + 2].ToString(); boolean = arg1; arg1 = Camera();
+                            arg1 = fileData[pointer + 2].ToString(); variable = arg1; arg1 = Camera();
                             pointer = nexptr;
                             sw.WriteLine(indent + "camera(" + arg1 + ");");
                             break;
@@ -295,7 +298,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x2A:
                             // Camera Roll
-                            // The "Z-Pos" doesn't seem to work and always seems set to 0x00 in retail scripts.
+                            // The "Z-Pos" arg doesn't seem to work and always seems set to 0x00 in retail scripts.
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -314,9 +317,8 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x2C:
                             // Camera Pan
-                            // The offset arg displaces the position of the actor, this can even off-center an actor from its tile.
+                            // The offset arg displaces the position of the camera.
                             // Sadly, it's not currently understood how it works or why the values are defined as they are in retail scripts.
-                            // Common retail values are 0xC9, 0xCB, and oddly enough the same as the Entity ID itself. 0xC9 seems to always ensure the exact XYZ is used, however.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -326,7 +328,7 @@ namespace DisgaeaScriptEditor.Formats
                             break;
 
                         case 0x2D:
-                            // Y Position Properties
+                            // Position Settings
                             // Setting the last arguement to 0x00 will cause the Actor to freeze at their current Y position, ignoring gravity.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
@@ -336,7 +338,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x2E:
                             // Camera Rotation
-                            // The "Z-Pos" doesn't seem to work and always seems set to 0 in retail scripts.
+                            // The "Z-Pos" arg doesn't seem to work and always seems set to 0 in retail scripts.
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -375,13 +377,13 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x39:
-                            // Setup Background Image
+                            // Background Image Settings
                             // Assigns the designated BG Image to the Index chosen. Last arg is unknown currently..
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = fileData[pointer + 3].ToString();
                             arg3 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "background.image.settings(bgID = " + arg2 + ", index = " + arg1 + ", " + arg3 + ");");
+                            sw.WriteLine(indent + "background.image.settings(bgID = " + arg2 + ", " + arg3 + ", index = " + arg1 + ");");
                             break;
 
                         case 0x3A:
@@ -406,6 +408,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x4E:
                             // Spawn Actor
+                            // Add 10000 to the charaID to load an actor from the current save file instead of randomly generating a new one.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
@@ -413,7 +416,7 @@ namespace DisgaeaScriptEditor.Formats
                             break;
 
                         case 0x4F:
-                            // Give Character
+                            // Give the player the designated Character
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
@@ -421,14 +424,14 @@ namespace DisgaeaScriptEditor.Formats
                             break;
 
                         case 0x50:
-                            // Give HL
+                            // Give the player the designated amount of HL
                             arg1 = parseInt32(fileData.Skip(pointer + 2).Take(4).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "get.money(" + arg1 + ");");
                             break;
 
                         case 0x51:
-                            // Give Item
+                            // Give the player the designated Item
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
@@ -440,7 +443,7 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x53:
-                            // Input Control
+                            // Send the designated controller Input to the game.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "input(" + arg1 + ");");
@@ -514,7 +517,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Play Combat Animation
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
-                            arg3 = fileData[pointer + 6].ToString(); direction = arg3; arg3 = Direction();
+                            arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
                             pointer = nexptr;
                             sw.WriteLine(indent + "actor.anim.index(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
                             break;
@@ -524,7 +527,7 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x6B:
-                            // Actor Stance
+                            // Actor Settings
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString(); //stance = arg2; arg2 = Stance();
                             pointer = nexptr;
@@ -541,7 +544,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
-                            arg4 = fileData[pointer + 7].ToString(); role = arg4; arg4 = Role();
+                            arg4 = fileData[pointer + 7].ToString(); variable = arg4; arg4 = Role();
                             pointer = nexptr;
                             sw.WriteLine(indent + "actor.npc(entity = " + arg1 + ", charaID = " + arg2 + ", level = " + arg3 + ", role = " + arg4 + ");");
                             break;
@@ -841,7 +844,7 @@ namespace DisgaeaScriptEditor.Formats
 
         public static string Camera()
         {
-            switch (boolean)
+            switch (variable)
             {
                 case "0":
                     // Normal Camera (Unlock if Locked)
@@ -867,7 +870,7 @@ namespace DisgaeaScriptEditor.Formats
 
         public static string Role()
         {
-            switch (role)
+            switch (variable)
             {
                 case "0":
                     // Player Controlled Characters
@@ -893,7 +896,7 @@ namespace DisgaeaScriptEditor.Formats
 
         public static string Stance()
         {
-            switch (stance)
+            switch (variable)
             {
                 case "0":
                     // Animation Locked
@@ -915,7 +918,7 @@ namespace DisgaeaScriptEditor.Formats
 
         public static string Direction()
         {
-            switch (direction)
+            switch (variable)
             {
                 case "0":
                     // North East

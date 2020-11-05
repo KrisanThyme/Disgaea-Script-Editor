@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Windows;
+
+using formApp = System.Windows.Forms.Application;
 
 namespace DisgaeaScriptEditor.Formats
 {
@@ -36,6 +39,7 @@ namespace DisgaeaScriptEditor.Formats
 
         static int storeInt32(params byte[] args) => BitConverter.ToInt32(args, 0);
 
+        static MainWindow mw = (MainWindow)Application.Current.MainWindow;
         static BinaryReader br;
 
         public static void Unpack()
@@ -61,8 +65,14 @@ namespace DisgaeaScriptEditor.Formats
                 exdir = System.IO.Path.GetDirectoryName(MainWindow.UserFile) + "/Extracted/";
                 Directory.CreateDirectory(exdir);
 
+                mw.progressBar.Maximum = fileCount;
+
                 for (int i = 0; i < fileCount; i++)
                 {
+                    MainWindow.curVal = mw.progressBar.Value;
+                    mw.progressBar.Value = MainWindow.curVal + 1;
+                    formApp.DoEvents();
+
                     offset = storeInt32(fileData.Skip(pointerOffset + (4 * i)).Take(4).ToArray());
                     script = storeInt32(fileData.Skip(scriptOffset + (4 * i)).Take(4).ToArray());
                     filename = Convert.ToString(script).PadLeft(8, '0');

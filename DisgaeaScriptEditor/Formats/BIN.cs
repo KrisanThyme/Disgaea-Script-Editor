@@ -109,6 +109,7 @@ namespace DisgaeaScriptEditor.Formats
 
                      /* case 0x03, 0x04:
                            // NEEDS PARSING
+                           // These seem to be unused in the original PS2 release, interestingly enough..
                            break; */
 
                         case 0x05:
@@ -516,7 +517,6 @@ namespace DisgaeaScriptEditor.Formats
                             // Move Actor
                             // The offset arg displaces the position of the actor, this can even off-center an actor from its tile.
                             // Sadly, it's not currently understood how it works or why the values are defined as they are in retail scripts.
-                            // Common retail values are 0xC9, 0xCB, and oddly enough the same as the Entity ID itself. 0xC9 seems to always ensure the exact XYZ is used, however.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -553,7 +553,7 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x6A:
                             // Play Animation
                             // Unlike actor.anim the ID used here doesn't seem to match any known index..
-                            // The values used seem to behave differently compared to unk1, but little else is known.
+                            // The values used seem to behave differently compared to actor.anim.settings, but little else is known.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
                             arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
@@ -593,9 +593,21 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "actor.asset(entity = " + arg1 + ", charaID = " + arg2 + ");");
                             break;
 
-                     /* case 0x6F, 0x70:
+                     /* case 0x6F:
                             // NEEDS PARSING
                             break; */
+
+                        case 0x70:
+                            // Modify the Map Terrain
+                            // Primarily used in special ability cutscenes to create craters after a mass-explosion.
+                            // Currently not understood how it works, but it definitely has some intriguing potential..
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "system.edit.map(" + arg1 + ", " + arg2 + ", " + arg3 + ", " + arg4 + ");");
+                            break;
 
                         case 0x71:
                             // Spawn GFX Effect
@@ -608,7 +620,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg7 = parseInt16(fileData.Skip(pointer + 14).Take(2).ToArray());
                             arg8 = fileData[pointer + 16].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "system.gfx(graphicID = " + arg1 + ", pos.x = " + arg3 + ", pos.y = " + arg4 + ", pos.z = " + arg5 + ", pos.offset = " + arg2 + ", scale = " + arg6 + ", speed = " + arg7 + ", " + arg8 + ");");
+                            sw.WriteLine(indent + "system.gfx(effectID = " + arg1 + ", pos.x = " + arg3 + ", pos.y = " + arg4 + ", pos.z = " + arg5 + ", pos.offset = " + arg2 + ", scale = " + arg6 + ", speed = " + arg7 + ", " + arg8 + ");");
                             break;
 
                      /* case 0x72:
@@ -795,6 +807,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0xDD:
                             // Print String for DS Version (Top Screen)
+                            // This appears to be unused in all other builds of Disgaea.
                             arg1 = parseString();
                             pointer = nexptr;
                             sw.WriteLine(indent + "print.ds(\"" + arg1 + "\");");

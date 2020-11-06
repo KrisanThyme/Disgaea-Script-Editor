@@ -29,6 +29,7 @@ namespace DisgaeaScriptEditor.Formats
         static string arg5;
         static string arg6;
         static string arg7;
+        static string arg8;
         static string op1;
         static string op2;
         static string op3;
@@ -178,7 +179,7 @@ namespace DisgaeaScriptEditor.Formats
                                break; */
 
                         case 0x0E:
-                            // Set Fade Color
+                            // Fadeout and Fadein Filter
                             // Determines the color used for the system.fade Opcode.
                             arg1 = Convert.ToInt32(fileData[pointer + 4] | (fileData[pointer + 3] << 8) | (fileData[pointer + 2] << 16)).ToString("X2").PadLeft(6, '0');
                             pointer = nexptr;
@@ -273,9 +274,19 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "actor.disable(entity = " + arg1 + ");");
                             break;
 
-                     /* case 0x24:
-                            // NEEDS PARSING
-                            break; */
+                        case 0x24:
+                            // Actor Cutscene Filter
+                            // Used for special abilities and magic with unique cutscenes.
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
+                            arg3 = Convert.ToInt32(fileData[pointer + 7] | (fileData[pointer + 6] << 8) | (fileData[pointer + 5] << 16)).ToString("X2").PadLeft(6, '0');
+                            arg4 = fileData[pointer + 8].ToString();
+                            arg5 = parseInt16(fileData.Skip(pointer + 9).Take(2).ToArray());
+                            arg6 = parseInt16(fileData.Skip(pointer + 11).Take(2).ToArray());
+                            arg7 = parseInt16(fileData.Skip(pointer + 13).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "actor.cutscene.filter(entity = " + arg1 + ", rgb = " + arg3 + ", alpha = " + arg4 + ", stretch.x = " + arg5 + ", stretch.y = " + arg6 + ", rotate.z = " + arg7 + ", " + arg2 + ");");
+                            break;
 
                      /* case 0x25, 0x26:
                             // Unknown Opcode. Not used in any retail script.
@@ -520,7 +531,7 @@ namespace DisgaeaScriptEditor.Formats
                         case 0x66:
                             // Play Animation
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
-                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg2 = parseUInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "actor.anim(entity = " + arg1 + ", animID = " + arg2 + ");");
                             break;
@@ -582,7 +593,25 @@ namespace DisgaeaScriptEditor.Formats
                             sw.WriteLine(indent + "actor.asset(entity = " + arg1 + ", charaID = " + arg2 + ");");
                             break;
 
-                     /* case 0x6F, 0x70, 0x71, 0x72:
+                     /* case 0x6F, 0x70:
+                            // NEEDS PARSING
+                            break; */
+
+                        case 0x71:
+                            // Spawn GFX Effect
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
+                            arg4 = parseInt16(fileData.Skip(pointer + 8).Take(2).ToArray());
+                            arg5 = parseInt16(fileData.Skip(pointer + 10).Take(2).ToArray());
+                            arg6 = parseInt16(fileData.Skip(pointer + 12).Take(2).ToArray());
+                            arg7 = parseInt16(fileData.Skip(pointer + 14).Take(2).ToArray());
+                            arg8 = fileData[pointer + 16].ToString();
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "system.gfx(graphicID = " + arg1 + ", pos.x = " + arg3 + ", pos.y = " + arg4 + ", pos.z = " + arg5 + ", pos.offset = " + arg2 + ", scale = " + arg6 + ", speed = " + arg7 + ", " + arg8 + ");");
+                            break;
+
+                     /* case 0x72:
                             // NEEDS PARSING
                             break; */
 

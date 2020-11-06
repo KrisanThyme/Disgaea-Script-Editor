@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DisgaeaScriptEditor"
         mc:Ignorable="d"
-        Title="Disgaea Script Editor" Height="245" Width="375"
+        Title="Disgaea Script Editor" Height="250" Width="375"
         Icon="Icon.ico">
     <Grid>
         <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="66" Margin="10,10,0,0" VerticalAlignment="Top" Width="110"/>

@@ -89,6 +89,25 @@ namespace DisgaeaScriptEditor.Formats
                         bw.Write(workingFile);
                         bw.Close();
                     }
+                    else if (filename == "00009222")
+                    {
+                        fileSize = dataSize - offset;
+
+                        if (fileSize == 250)
+                        {
+                            if (BitConverter.ToInt32(dataArray.Skip(offset + 157).Take(93).ToArray(), 0) == 0)
+                            {
+                                fileSize = 157;
+                            }
+                        }
+
+                        workingFile = new byte[fileSize];
+                        Array.Copy(dataArray, offset, workingFile, 0, fileSize);
+
+                        var bw = new BinaryWriter(File.Create(exdir + filename + ".BIN"));
+                        bw.Write(workingFile);
+                        bw.Close();
+                    }
                     else
                     {
                         fileSize = dataSize - offset;

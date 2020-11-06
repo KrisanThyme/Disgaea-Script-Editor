@@ -67,13 +67,25 @@ namespace DisgaeaScriptEditor.Formats
                 while (pointer < fileDataLength)
                 {
                     opcode = fileData[pointer];
-                    opcodeLen = fileData[pointer + 1];
+                    if (opcode != 0)
+                    {
+                        opcodeLen = fileData[pointer + 1];
+                    }
+                    else
+                    {
+                        opcodeLen = fileData[fileDataLength - pointer];
+                    }
                     argCount = opcodeLen;
 
                     int nexptr = pointer + 2 + opcodeLen;
 
                     switch (opcode)
                     {
+                        case 0x00:
+                            // Padding
+                            pointer = nexptr;
+                            break;
+
                         case 0x01:
                             // Sleep
                             arg1 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
@@ -446,7 +458,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Send the designated controller Input to the game.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "input(" + arg1 + ");");
+                            sw.WriteLine(indent + "input(buttonID = " + arg1 + ");");
                             break;
 
                      /* case 0x54, 0x55:
@@ -514,24 +526,37 @@ namespace DisgaeaScriptEditor.Formats
                             break;
 
                         case 0x67:
-                            // Play Combat Animation
+                            // Play Animation
+                            // Unlike actor.anim the ID used here doesn't seem to match any known index..
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
                             arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.anim.index(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
+                            sw.WriteLine(indent + "actor.anim.settings(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
                             break;
 
-                     /* case 0x68, 0x69, 0x6A:
-                            // NEEDS PARSING
-                            break; */
+                        /* case 0x68, 0x69:
+                               // NEEDS PARSING
+                               break; */
+
+                        case 0x6A:
+                            // Play Animation
+                            // Unlike actor.anim the ID used here doesn't seem to match any known index..
+                            // The values used seem to behave differently compared to unk1, but little else is known.
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
+                            arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "actor.anim.settings.alt(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
+                            break;
 
                         case 0x6B:
-                            // Actor Settings
+                            // Actor Idle
+                            // This seems like it sets the designated idle animation for the actor. (IE: NPC, Battle, etc..)
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString(); //stance = arg2; arg2 = Stance();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.settings(entity = " + arg1 + ", " + arg2 + ");");
+                            sw.WriteLine(indent + "actor.anim.idle(entity = " + arg1 + ", " + arg2 + ");");
                             break;
 
                      /* case 0x6C:
@@ -610,7 +635,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.voice(" + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.voice(voID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x84, 0x85, 0x86:
@@ -626,7 +651,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.actor(" + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.actor(seID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x89, 0x8A, 0x8B:
@@ -639,7 +664,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = fileData[pointer + 4].ToString();
                             arg3 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.sfx(" + arg1 + ", samplerate = " + arg3 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.sfx(sfxID = " + arg1 + ", samplerate = " + arg3 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x8D:
@@ -652,26 +677,41 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x91:
                             // Play Background Music
-                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg1 = fileData[pointer + 2].ToString();
+                            arg2 = fileData[pointer + 3].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgm(" + arg1 + ");");
+                            sw.WriteLine(indent + "sound.bgm(bgmID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                         case 0x92:
-                            // Adjust Background Music Volume
+                            // Background Music Settings
+                            // Lower or Raise the volume over the designated period of time.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseTime(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgm.vol(volume = " + arg1 + ", timer = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.bgm.settings(volume = " + arg1 + ", timer = " + arg2 + ");");
                             break;
 
-                     /* case 0x93, 0x94, 0x95:
+                     /* case 0x93:
+                               // NEEDS PARSING
+                               break; */
+
+                        case 0x94:
+                            // Play Background Music
+                            // Appears to function the same as sound.bgm but uses Int16 for its args instead..?
+                            arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
+                            arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
+                            pointer = nexptr;
+                            sw.WriteLine(indent + "sound.bgm.alt(bgmID = " + arg1 + ", volume = " + arg2 + ");");
+                            break;
+
+                     /* case 0x95:
                             // NEEDS PARSING
                             break; */
 
-                     /* case 0x96, 0x97:
-                            // Unknown Opcode. Not used in any retail script.
-                            break; */
+                        /* case 0x96, 0x97:
+                               // Unknown Opcode. Not used in any retail script.
+                               break; */
 
                         case 0x98:
                             // Set Talk.DAT ID
@@ -701,7 +741,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Show UI
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "system.load.ui(" + arg1 + ");");
+                            sw.WriteLine(indent + "system.load.ui(menuID = " + arg1 + ");");
                             break;
 
                      /* case 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF:

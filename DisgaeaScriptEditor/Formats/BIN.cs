@@ -401,13 +401,13 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x39:
-                            // Background Image Settings
+                            // Background Image Setup
                             // Assigns the designated BG Image to the Index chosen. Last arg is unknown currently..
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = fileData[pointer + 3].ToString();
                             arg3 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "background.image.settings(bgID = " + arg2 + ", " + arg3 + ", index = " + arg1 + ");");
+                            sw.WriteLine(indent + "background.image(imageIndex = " + arg1 + ", bgID = " + arg2 + ", " + arg3 + ");");
                             break;
 
                         case 0x3A:
@@ -415,7 +415,7 @@ namespace DisgaeaScriptEditor.Formats
                             // Using 0xFF (-1) clears any currently displayed image from the screen.
                             arg1 = fileData[pointer + 2].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "background.image(index = " + arg1 + ");");
+                            sw.WriteLine(indent + "background.image.display(imageIndex = " + arg1 + ");");
                             break;
 
                      /* case 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45:
@@ -432,11 +432,11 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x4E:
                             // Spawn Actor
-                            // Add 10000 to the charaID to load an actor from the current save file instead of randomly generating a new one.
+                            // Add 10000 to the character ID to load an actor from the current save file instead of randomly generating a new one.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor(entity = " + arg1 + ", charaID = " + arg2 + ");");
+                            sw.WriteLine(indent + "actor(entity = " + arg1 + ", ID = " + arg2 + ");");
                             break;
 
                         case 0x4F:
@@ -444,7 +444,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "get.chara(charaID = " + arg1 + ", level = " + arg2 + ");");
+                            sw.WriteLine(indent + "get.chara(charID = " + arg1 + ", level = " + arg2 + ");");
                             break;
 
                         case 0x50:
@@ -456,10 +456,11 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x51:
                             // Give the player the designated Item
+                            // The second arg appears to relate to rarity somehow, or perhaps even acting as a seed for item generation?
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "get.item(" + arg1 + ", " + arg2 + ");");
+                            sw.WriteLine(indent + "get.item(ID = " + arg1 + ", " + arg2 + ");");
                             break;
 
                      /* case 0x52:
@@ -533,7 +534,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseUInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.anim(entity = " + arg1 + ", animID = " + arg2 + ");");
+                            sw.WriteLine(indent + "actor.anim(entity = " + arg1 + ", anmID = " + arg2 + ");");
                             break;
 
                         case 0x67:
@@ -543,7 +544,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
                             arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.anim.settings(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
+                            sw.WriteLine(indent + "actor.anim.settings(entity = " + arg1 + ", ID = " + arg2 + ", direction = " + arg3 + ");");
                             break;
 
                         /* case 0x68, 0x69:
@@ -558,7 +559,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(4).ToArray());
                             arg3 = fileData[pointer + 6].ToString(); variable = arg3; arg3 = Direction();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.anim.settings.alt(entity = " + arg1 + ", animIndex = " + arg2 + ", direction = " + arg3 + ");");
+                            sw.WriteLine(indent + "actor.anim.settings.alt(entity = " + arg1 + ", ID = " + arg2 + ", direction = " + arg3 + ");");
                             break;
 
                         case 0x6B:
@@ -582,7 +583,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             arg4 = fileData[pointer + 7].ToString(); variable = arg4; arg4 = Role();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.npc(entity = " + arg1 + ", charaID = " + arg2 + ", level = " + arg3 + ", role = " + arg4 + ");");
+                            sw.WriteLine(indent + "actor.npc(entity = " + arg1 + ", charID = " + arg2 + ", level = " + arg3 + ", role = " + arg4 + ");");
                             break;
 
                         case 0x6E:
@@ -590,7 +591,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor.asset(entity = " + arg1 + ", charaID = " + arg2 + ");");
+                            sw.WriteLine(indent + "actor.asset(entity = " + arg1 + ", charID = " + arg2 + ");");
                             break;
 
                      /* case 0x6F:
@@ -676,7 +677,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.voice(voID = " + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.dialog(dialogID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x84, 0x85, 0x86:
@@ -692,7 +693,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.actor(seID = " + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.voice(voiceID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x89, 0x8A, 0x8B:
@@ -705,7 +706,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg2 = fileData[pointer + 4].ToString();
                             arg3 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.sfx(sfxID = " + arg1 + ", samplerate = " + arg3 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.sfx(seID = " + arg1 + ", samplerate = " + arg3 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x8D:
@@ -721,7 +722,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = fileData[pointer + 3].ToString();
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgm(bgmID = " + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.bgm(musicID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                         case 0x92:
@@ -743,7 +744,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "sound.bgm.alt(bgmID = " + arg1 + ", volume = " + arg2 + ");");
+                            sw.WriteLine(indent + "sound.bgm.alt(musicID = " + arg1 + ", volume = " + arg2 + ");");
                             break;
 
                      /* case 0x95:
@@ -769,6 +770,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0xC8:
                             // Hardcoded Handler
+                            // Triggers a lot of different things on the engine level, still needs to be researched..
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = fileData[pointer + 3].ToString();
                             arg3 = fileData[pointer + 4].ToString();

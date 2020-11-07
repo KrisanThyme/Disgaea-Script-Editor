@@ -436,7 +436,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "actor(entity = " + arg1 + ", ID = " + arg2 + ");");
+                            sw.WriteLine(indent + "actor(entity = " + arg1 + ", charID = " + arg2 + ");");
                             break;
 
                         case 0x4F:
@@ -460,7 +460,7 @@ namespace DisgaeaScriptEditor.Formats
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             pointer = nexptr;
-                            sw.WriteLine(indent + "get.item(ID = " + arg1 + ", " + arg2 + ");");
+                            sw.WriteLine(indent + "get.item(itemID = " + arg1 + ", " + arg2 + ");");
                             break;
 
                      /* case 0x52:
@@ -468,7 +468,7 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x53:
-                            // Send the designated controller Input to the game.
+                            // Send controller Input
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             pointer = nexptr;
                             sw.WriteLine(indent + "input(buttonID = " + arg1 + ");");
@@ -564,7 +564,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x6B:
                             // Actor Idle
-                            // This seems like it sets the designated idle animation for the actor. (IE: NPC, Battle, etc..)
+                            // This seems like it sets a designated idle animation for the actor. (IE: NPC, Battle, etc..)
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString(); //stance = arg2; arg2 = Stance();
                             pointer = nexptr;
@@ -577,7 +577,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x6D:
                             // Spawn NPC
-                            // Add 10000 to the charaID to load an actor from the current save file instead of randomly generating a new one.
+                            // Add 10000 to the charID to load an actor from the current save file instead of randomly generating a new one.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = parseInt16(fileData.Skip(pointer + 3).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
@@ -612,6 +612,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x71:
                             // Spawn GFX Effect
+                            // The effectID correlates to what is stored in EFFECT.KM3, presumably anyway.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = parseInt16(fileData.Skip(pointer + 4).Take(2).ToArray());
                             arg3 = parseInt16(fileData.Skip(pointer + 6).Take(2).ToArray());
@@ -673,7 +674,7 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x83:
-                            // Play Voice Over
+                            // Play Voiced Cutscene Dialog
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
@@ -689,7 +690,8 @@ namespace DisgaeaScriptEditor.Formats
                             break; */
 
                         case 0x88:
-                            // Play Actor Voice
+                            // Play Actor Voices
+                            // The voiceID correlates to what is stored in VOICE01.PBD and VOICE02.PBD, presumably anyway.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             pointer = nexptr;
@@ -702,6 +704,7 @@ namespace DisgaeaScriptEditor.Formats
 
                         case 0x8C:
                             // Play Sound Effect
+                            // The seID correlates to what is stored in SE01.PBD and SE02.PBD, presumably anyway.
                             arg1 = parseInt16(fileData.Skip(pointer + 2).Take(2).ToArray());
                             arg2 = fileData[pointer + 4].ToString();
                             arg3 = parseUInt16(fileData.Skip(pointer + 5).Take(2).ToArray());
@@ -756,7 +759,8 @@ namespace DisgaeaScriptEditor.Formats
                                break; */
 
                         case 0x98:
-                            // Set Talk.DAT ID
+                            // Setup Dialog interaction for an Actor
+                            // The talkID correlates to what is stored in TALK.DAT.
                             arg1 = fileData[pointer + 2].ToString();
                             arg2 = Convert.ToString(fileData[pointer + 4] | (fileData[pointer + 5] << 8) | (fileData[pointer + 6] << 16));
                             pointer = nexptr;

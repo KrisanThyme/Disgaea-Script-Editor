@@ -18,6 +18,7 @@ namespace DisgaeaScriptEditor
         public static string UserFolder;
         public static string Extension;
         public static byte[] WorkingFile;
+        public static string WorkingScript;
 
         public static int maxVal;
         public static double curVal;
@@ -117,8 +118,75 @@ namespace DisgaeaScriptEditor
                         WorkingFile = File.ReadAllBytes(UserFile);
                         Formats.BIN.Parse();
                     }
-
                     formMBox.Show("Parsing Complete.", "Script Parser");
+                    progressBar.Value = 0;
+                    fbd.SelectedPath = null;
+                }
+                else
+                {
+                    formMBox.Show("No valid files for parsing were found.", "Script Parser");
+                    fbd.SelectedPath = null;
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        private void CompileButton_Click(object sender, RoutedEventArgs e)
+        {
+            ofd.Filter = "Script File(*.txt)|*.txt";
+            ofd.ShowDialog();
+            UserFile = ofd.FileName;
+            Extension = Path.GetExtension(UserFile);
+
+            if (!string.IsNullOrEmpty(UserFile))
+            {
+                if (Extension == ".TXT" || Extension == ".txt")
+                {
+                    WorkingScript = System.IO.Path.GetFullPath(UserFile);
+                    Formats.BIN.Compile();
+                    formMBox.Show("Compiling Complete.", "Script Compiler");
+                    ofd.FileName = null;
+                }
+                else
+                {
+                    formMBox.Show("The selected file was not a valid Disgaea Script.", "Script Compiler");
+                    ofd.FileName = null;
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        private void CompileAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            fbd.ShowDialog();
+            UserFolder = fbd.SelectedPath;
+
+            if (!string.IsNullOrEmpty(UserFolder))
+            {
+                if (Directory.GetFiles(UserFolder, "*.txt").Length != 0)
+                {
+                    maxVal = Directory.EnumerateFiles(UserFolder, "*.txt").Count();
+                    progressBar.Maximum = maxVal;
+
+                    foreach (string txtfile in Directory.EnumerateFiles(UserFolder, "*.txt"))
+                    {
+                        curVal = progressBar.Value;
+                        progressBar.Value = curVal + 1;
+                        formApp.DoEvents();
+
+                        UserFile = txtfile;
+                        WorkingScript = System.IO.Path.GetFullPath(UserFile);
+                        Formats.BIN.Compile();
+                    }
+                    formMBox.Show("Compiling Complete.", "Script Compiler");
                     progressBar.Value = 0;
                     fbd.SelectedPath = null;
                 }
